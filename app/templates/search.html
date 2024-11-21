@@ -1,0 +1,136 @@
+<form action="" method="post">
+    {% csrf_token %}
+    <div class="d-flex justify-content-center align-items-center gap-2 p-3">
+        <input type="hidden" name="form_type" value="search_form">
+        <input type="text" class="form-control form-control-sm" name="symbol" id="" placeholder="" required>
+        <button class="btn btn-outline-dark btn-sm" type="submit">search</button>
+    </div>
+</form>
+
+{% if search_results %}
+
+<form method="post" action="">
+    {% csrf_token %}
+    <input type="hidden" name="form_type" value="add_symbol_form">
+    <div>
+        <ul class="list-group" style="text-align: center; margin-top: 10px">
+            {% for symbol in search_results %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ symbol.token }} - {{ symbol.symbol }} -- {{ symbol.name }}
+                <button type="submit" name="add_symbol" value="{{ symbol.symbol }}|{{ symbol.token }}"
+                    class="btn btn-outline-dark btn-sm">+</button>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</form>
+
+{% else %}
+
+<div>
+    <ul class="list-group" style="text-align: center; margin-top: 10px">
+        <div id="error-message" style="color: red;"></div>
+        {% for symbol in watch_list %}
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="form_type" value="remove_symbol_form">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ symbol.symbol }}
+
+                <div>
+                    <pre class="m-auto" id="data-output-{{ symbol.symboltoken }}">loading...</pre>
+
+                    <button type="submit" name="remove_symbol" value="{{ symbol.symboltoken }}"
+                        class="btn btn-outline-dark btn-sm">x</button>
+                </div>
+
+            </li>
+        </form>
+        {% endfor %}
+    </ul>
+
+</div>
+
+{% endif %}
+
+
+<script>
+    const ws = new WebSocket('ws://localhost:8000/ws/live-data/');
+    const previousPrices = {};
+
+    ws.onopen = () => {
+        console.log('WebSocket connected');
+        document.getElementById('error-message').textContent = '';
+    };
+
+    // ws.onmessage = (event) => {
+    //     const data = JSON.parse(event.data);
+    //     console.log(data);
+
+    //     const token = data.message?.token;
+    //     const ltp = data.message?.last_traded_price;
+
+    //     if (token && ltp) {
+    //         const dataElement = document.getElementById(`data-output-${token}`);
+    //         if (dataElement) {
+    //             const previousLTP = previousPrices[token] || 0;
+
+    //             if (ltp > previousLTP) {
+    //                 dataElement.style.color = 'green';
+    //             } else if (ltp < previousLTP) {
+    //                 dataElement.style.color = 'red';
+    //             } else {
+    //                 dataElement.style.color = 'black';
+    //             }
+
+    //             dataElement.textContent = `${ltp / 100}`;
+
+    //             previousPrices[token] = ltp;
+    //         }
+    //     }
+    // };
+
+    ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        if (data.live_data && Array.isArray(data.live_data)) {
+            data.live_data.forEach(item => {
+                const token = item.token;
+                const ltp = item.last_traded_price;
+
+                // console.log(`Token: ${token}, LTP: ${ltp}`);
+
+                if (token && ltp) {
+                    const dataElement = document.getElementById(`data-output-${token}`);
+                    if (dataElement) {
+                        const previousLTP = previousPrices[token] || 0;
+
+                        if (ltp > previousLTP) {
+                            dataElement.style.color = 'green';
+                        } else if (ltp < previousLTP) {
+                            dataElement.style.color = 'red';
+                        } else {
+                            dataElement.style.color = 'black';
+                        }
+
+                        dataElement.textContent = `${ltp / 100}`;
+
+                        previousPrices[token] = ltp;
+                    }
+                }
+            });
+        } else {
+            console.error('Unexpected data format or no live_data:', data);
+        }
+    };
+
+    ws.onerror = () => {
+        console.error('WebSocket error');
+        document.getElementById('error-message').textContent = 'Error connecting to WebSocket';
+    };
+
+    ws.onclose = () => {
+        console.log('WebSocket connection closed');
+        document.getElementById('error-message').textContent = 'WebSocket connection closed';
+    };
+</script>

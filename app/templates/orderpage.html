@@ -1,0 +1,94 @@
+{% extends "base.html" %} {% block title %}Form{% endblock %}
+{% block body%}
+{% if user %}
+
+<div class="container mt-3">
+  <h3>Open Orders</h3>
+  <table class="table table-bordered table-hover shadow">
+    <tr>
+      <th scope="col">ID</th>
+      <th scope="col">Symbol</th>
+      <th scope="col">Quantity</th>
+      <th scope="col">Price</th>
+      <th scope="col">P/L</th>
+      <th scope="col">Actions</th>
+    </tr>
+    {% for order in open_orders %}
+    <tr>
+      <td scope="col">{{ order.id }}</td>
+      <td>{{ order.tradingsymbol }}</td>
+      <td>{{ order.quantity }}</td>
+      <td>{{ order.price }}</td>
+      <td>Null</td>
+      <td>
+        <button class="btn btn-outline-dark btn-sm" onclick="closeOrder('{{ order.id }}')">Close Order</button>
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="7">No open orders available.</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+<div class="container">
+  <h3>Closed Orders</h3>
+  <table class="table table-bordered table-hover shadow">
+    <tr>
+      <th scope="col">ID</th>
+      <th scope="col">Symbol</th>
+      <th scope="col">Quantity</th>
+      <th scope="col">Price</th>
+      <th scope="col">Closing Price</th>
+      <th scope="col">P/L</th>
+    </tr>
+    {% for order in closed_orders %}
+    <tr>
+      <td scope="col">{{ order.id }}</td>
+      <td>{{ order.tradingsymbol }}</td>
+      <td>{{ order.quantity }}</td>
+      <td>{{ order.price }}</td>
+      <td>{{ order.close_price }}</td>
+      <td>Null</td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="7">No closed orders available.</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<script>
+  function closeOrder(orderId) {
+      const closePrice = prompt("Enter the closing price:");
+      if (closePrice) {
+          fetch("", {
+              method: "POST",
+              headers: {
+                  "Content-Type": "application/x-www-form-urlencoded",
+                  "X-CSRFToken": "{{ csrf_token }}"
+              },
+              body: new URLSearchParams({
+                  order_id: orderId,
+                  close_price: closePrice
+              })
+          })
+          .then(response => response.json())
+          .then(data => {
+              if (data.success) {
+                  alert(data.success);
+                  location.reload(); // Reload the page to update the list
+              } else {
+                  alert(data.error);
+              }
+          })
+          .catch(error => console.error("Error:", error));
+      }
+  }
+</script>
+
+{% else %}
+No user data passed
+{% endif %}
+{% endblock %}

@@ -1,0 +1,5 @@
+.env
+livedata/
+__pycache__/
+logs/
+db.sqlite3

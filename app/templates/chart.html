@@ -1,0 +1,87 @@
+<div style="text-align: center; margin-top: 10px">
+    <form action="" method="post">
+        {% csrf_token %}
+
+        <div class="d-flex justify-content-center align-items-center gap-2 p-3">
+
+            <input type="hidden" name="form_type" value="candle_data_form">
+
+            <select name="symboltoken" class="form-select" id="symboltoken" required>
+                <option value="" disabled selected>Select symbol</option>
+                {% for result in watch_list %}
+                <option value="{{ result.symboltoken }}">{{ result.symbol }}</option>
+                {% endfor %}
+            </select>
+
+            <select name="interval" class="form-select" id="interval" required>
+                <option value="" disabled selected>Select interval</option>
+                <option value="ONE_MINUTE">ONE_MINUTE</option>
+                <option value="FIVE_MINUTE">FIVE_MINUTE</option>
+                <option value="FIFTEEN_MINUTE">FIFTEEN_MINUTE</option>
+                <option value="THIRTY_MINUTE">THIRTY_MINUTE</option>
+                <option value="ONE_HOUR">ONE_HOUR</option>
+                <option value="ONE_DAY">ONE_DAY</option>
+            </select>
+
+            <!-- <input type="datetime-local" class="form-control" name="fromdate" id="fromdate" placeholder="fromdate" required />
+            <input type="datetime-local" class="form-control" name="todate" id="todate" placeholder="todate" required /> -->
+
+            <button type="submit" class="btn btn-outline-dark btn-sm">Show</button>
+
+        </div>
+        
+    </form>
+</div>
+
+<div id="chartContainer" class="" style="height: 400px; width: 99%"></div>
+
+<script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Parse candlestick data from server
+        const data = JSON.parse('{{ candle_data_json|safe }}');
+
+        // Transform the data for TradingView Lightweight Charts
+        const candlestickData = data.map(d => ({
+            time: new Date(d.Timestamp).getTime() / 1000, // Convert to UNIX timestamp
+            open: d.Open,
+            high: d.High,
+            low: d.Low,
+            close: d.Close,
+        }));
+
+        // Create the chart container
+        const chartContainer = document.getElementById('chartContainer');
+        const chart = LightweightCharts.createChart(chartContainer, {
+            width: chartContainer.clientWidth,
+            height: 350,
+            layout: {
+                backgroundColor: '#ffffff',
+                textColor: '#000',
+            },
+            grid: {
+                vertLines: {
+                    color: '#e1e1e1',
+                },
+                horzLines: {
+                    color: '#e1e1e1',
+                },
+            },
+            timeScale: {
+                borderColor: '#cccccc',
+            },
+            priceScale: {
+                borderColor: '#cccccc',
+            },
+        });
+
+        // Add candlestick series to the chart
+        const candlestickSeries = chart.addCandlestickSeries();
+        candlestickSeries.setData(candlestickData);
+
+        // Adjust chart size dynamically on window resize
+        window.addEventListener('resize', () => {
+            chart.resize(chartContainer.clientWidth, 350);
+        });
+    });
+</script>
