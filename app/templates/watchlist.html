@@ -13,7 +13,7 @@
     {% csrf_token %}
     <input type="hidden" name="form_type" value="add_symbol_form">
     <div>
-        <ul class="list-group" style="text-align: center; margin-top: 10px">
+        <ul class="list-group" style="text-align: center; margin: 10px 5px">
             {% for symbol in search_results %}
             <li class="list-group-item d-flex justify-content-between align-items-center">
                 {{ symbol.token }} - {{ symbol.symbol }} -- {{ symbol.name }}
@@ -28,28 +28,69 @@
 {% else %}
 
 <div>
-    <ul class="list-group" style="text-align: center; margin-top: 10px">
-        <div id="error-message" style="color: red;"></div>
+    <ul class="list-group" style="text-align: center; margin: 10px 5px">
         {% for symbol in watch_list %}
-        <form method="post">
+        <form method="post" style="margin: 0; padding: 0;">
             {% csrf_token %}
             <input type="hidden" name="form_type" value="remove_symbol_form">
             <li class="list-group-item d-flex justify-content-between align-items-center">
-                {{ symbol.symbol }}
+                <span class="symbol-name">{{ symbol.symbol }}</span>
 
-                <div>
+                <div class="symbol-actions d-flex align-items-center">
                     <pre class="m-auto" id="data-output-{{ symbol.symboltoken }}">loading...</pre>
-
                     <button type="submit" name="remove_symbol" value="{{ symbol.symboltoken }}"
-                        class="btn btn-outline-dark btn-sm">x</button>
+                        class="btn btn-remove">x</button>
                 </div>
-
             </li>
         </form>
         {% endfor %}
     </ul>
-
 </div>
+<style>
+    .list-group-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 15px;
+    }
+
+    .symbol-name {
+        flex: 1;
+        text-align: left;
+    }
+
+    .symbol-actions {
+        display: flex;
+        align-items: center;
+    }
+
+    pre {
+        margin: 0;
+        font-size: 0.9rem;
+    }
+
+    .btn-remove {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 0px 0px 5px 0px;
+        margin-left: 10px;
+    }
+
+    .btn-remove:hover {
+        color: red;
+    }
+
+    .btn-remove:focus {
+        outline: none;
+    }
+
+    .btn-outline-dark {
+        margin-left: 10px;
+    }
+</style>
+
 
 {% endif %}
 
@@ -62,33 +103,6 @@
         console.log('WebSocket connected');
         document.getElementById('error-message').textContent = '';
     };
-
-    // ws.onmessage = (event) => {
-    //     const data = JSON.parse(event.data);
-    //     console.log(data);
-
-    //     const token = data.message?.token;
-    //     const ltp = data.message?.last_traded_price;
-
-    //     if (token && ltp) {
-    //         const dataElement = document.getElementById(`data-output-${token}`);
-    //         if (dataElement) {
-    //             const previousLTP = previousPrices[token] || 0;
-
-    //             if (ltp > previousLTP) {
-    //                 dataElement.style.color = 'green';
-    //             } else if (ltp < previousLTP) {
-    //                 dataElement.style.color = 'red';
-    //             } else {
-    //                 dataElement.style.color = 'black';
-    //             }
-
-    //             dataElement.textContent = `${ltp / 100}`;
-
-    //             previousPrices[token] = ltp;
-    //         }
-    //     }
-    // };
 
     ws.onmessage = (event) => {
         const data = JSON.parse(event.data);

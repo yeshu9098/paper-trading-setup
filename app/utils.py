@@ -3,7 +3,6 @@ from SmartApi import SmartConnect
 import logging
 from decouple import config
 
-logger = logging.getLogger(__name__)
 
 API_KEY = config('API_KEY')
 USERNAME = config('USERNAME')
@@ -25,5 +24,4 @@ def get_smartapi_session():
             "feedToken": obj.getfeedToken()
         }
     except Exception as e:
-        logger.error(f"Error in SmartAPI session: {e}")
         return None

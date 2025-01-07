@@ -15,7 +15,6 @@ class LiveDataConsumer(AsyncWebsocketConsumer):
         self.live_data_task = asyncio.create_task(self.send_live_data())
 
     async def disconnect(self, close_code):
-        # print("Client disconnected")
         self.keep_sending = False
         if hasattr(self, "live_data_task"):
             self.live_data_task.cancel()

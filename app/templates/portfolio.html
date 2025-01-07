@@ -1,0 +1,22 @@
+
+{% extends "base.html" %}
+{% block title %}Portfolio{% endblock %}
+{% block body%}
+{% if user %}
+
+<div class="container mt-2">
+    <div class="card">
+        <div class="card-body">
+            {{ user.clientcode }}
+            <h3>Holdings</h3>
+            <p class="card-text">
+                Holdings : {{holdings.data.holdings}}
+                <br>
+                Total Holding : {{holdings.data.totalholding}}
+            </p>
+        </div>
+    </div>
+
+</div>
+
+{% else %} No user data passed {% endif %} {% endblock %}

@@ -1,4 +1,4 @@
-<div style="text-align: center; margin-top: 10px">
+<div style="text-align: center; margin-top: 0px">
     <form action="" method="post">
         {% csrf_token %}
 
@@ -6,14 +6,14 @@
 
             <input type="hidden" name="form_type" value="candle_data_form">
 
-            <select name="symboltoken" class="form-select" id="symboltoken" required>
+            <select name="symboltoken" class="form-select form-select-sm" id="symboltoken" required>
                 <option value="" disabled selected>Select symbol</option>
                 {% for result in watch_list %}
                 <option value="{{ result.symboltoken }}">{{ result.symbol }}</option>
                 {% endfor %}
             </select>
 
-            <select name="interval" class="form-select" id="interval" required>
+            <select name="interval" class="form-select  form-select-sm" id="interval" required>
                 <option value="" disabled selected>Select interval</option>
                 <option value="ONE_MINUTE">ONE_MINUTE</option>
                 <option value="FIVE_MINUTE">FIVE_MINUTE</option>
@@ -22,10 +22,6 @@
                 <option value="ONE_HOUR">ONE_HOUR</option>
                 <option value="ONE_DAY">ONE_DAY</option>
             </select>
-
-            <!-- <input type="datetime-local" class="form-control" name="fromdate" id="fromdate" placeholder="fromdate" required />
-            <input type="datetime-local" class="form-control" name="todate" id="todate" placeholder="todate" required /> -->
-
             <button type="submit" class="btn btn-outline-dark btn-sm">Show</button>
 
         </div>
@@ -33,7 +29,7 @@
     </form>
 </div>
 
-<div id="chartContainer" class="" style="height: 400px; width: 99%"></div>
+<div id="chartContainer" class="p-1" style="height: 500px; width: 99%"></div>
 
 <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
 <script>
@@ -54,7 +50,7 @@
         const chartContainer = document.getElementById('chartContainer');
         const chart = LightweightCharts.createChart(chartContainer, {
             width: chartContainer.clientWidth,
-            height: 350,
+            height: 475,
             layout: {
                 backgroundColor: '#ffffff',
                 textColor: '#000',

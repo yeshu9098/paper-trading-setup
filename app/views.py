@@ -10,8 +10,6 @@ from .models import Symbol, PaperTrade
 from datetime import datetime
 from django.utils.timezone import now
 
-logger = logging.getLogger(__name__)
-
 
 def index(request):
     session = get_smartapi_session()
@@ -21,17 +19,14 @@ def index(request):
     candle_data_json = ""
     search_results = []
 
-
     # # Initial rendering
-
     request.session['initial_form_posted'] = False
 
     if not request.session.get('initial_form_posted', False):
-        symboltoken = '99926000'  #symbol.symboltoken
+        symboltoken = '99926000'
         interval = 'FIFTEEN_MINUTE'
-        fromdate = '2024-09-01 09:15'
-        # todate = todate = datetime.now().strftime('%Y-%m-%d %H:%M')
-        todate = '2024-11-14 15:30'
+        fromdate = '2024-01-01 09:15'
+        todate = todate = datetime.now().strftime('%Y-%m-%d %H:%M')
 
         historic_param = {
             "exchange": "NSE",
@@ -40,7 +35,6 @@ def index(request):
             "fromdate": fromdate,
             "todate": todate,
         }
-        # print(historic_param)
 
         try:
             chart_data = session['obj'].getCandleData(historic_param)
@@ -48,11 +42,9 @@ def index(request):
             candle_data = pd.DataFrame(chart_data['data'], columns=columns)
             candle_data_json = candle_data.to_json(orient='records')
             request.session['initial_form_posted'] = True
-            # print(candle_data_json)
 
-        except Exception as e:
-            logger.exception(f"Error fetching initial candle data: {e}")
-            return render(request, 'error.html', {'error': 'Failed to fetch initial candle data.'})
+        except Exception as error:
+            return render(request, 'error.html', {error})
 
        
     if request.method == 'POST':
@@ -61,28 +53,22 @@ def index(request):
             form_type = request.POST.get('form_type')
             symboltoken = request.POST.get('symboltoken')
             interval = request.POST.get('interval')
-            # fromdate = request.POST.get('fromdate').replace('T', ' ')
-            # todate = request.POST.get('todate').replace('T', ' ')
-            
 
             historic_param = {
                 "exchange": "NSE",
                 "symboltoken": symboltoken,
                 "interval": interval,
-                "fromdate": '2024-08-01 09:15',
-                "todate": '2024-11-14 15:30'  # datetime.now().strftime('%Y-%m-%d %H:%M')
+                "fromdate": '2024-01-01 09:15',
+                "todate": datetime.now().strftime('%Y-%m-%d %H:%M')
                 }
-            print(historic_param)
         
             try:
                 chart_data = session['obj'].getCandleData(historic_param)
                 columns = ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
                 candle_data = pd.DataFrame(chart_data['data'], columns=columns)
                 candle_data_json = candle_data.to_json(orient='records')
-                # print(candle_data_json)
 
             except Exception as e:
-                logger.exception(f"Error fetching candle data: {e}")
                 return render(request, 'error.html', {'error': 'Failed to fetch candle data.'})
 
 
@@ -94,7 +80,6 @@ def index(request):
                 matching_data = [item for item in data if symbol in item['symbol']]
                 search_results = matching_data[:10]
             except Exception as e:
-                logger.exception(f"Error during symbol search: {e}")
                 return render(request, 'error.html', {'error': 'Failed to fetch symbol data.'})
 
         if form_type == 'add_symbol_form':
@@ -105,12 +90,11 @@ def index(request):
 
         if form_type == 'remove_symbol_form':
             symbol_token = request.POST.get('remove_symbol')
-            print(symbol_token)
             try:
                 symbol = Symbol.objects.get(symboltoken=symbol_token)
                 symbol.delete()
             except Symbol.DoesNotExist:
-                logger.exception(f"Symbol {symbol_token} not found in watchlist.")
+                return render(request, 'error.html', {'error': 'Symbol not found in watchlist.'})
 
 
     try:
@@ -130,7 +114,6 @@ def index(request):
             }
         return render(request, 'index.html', context)
     except Exception as e:
-        logger.exception(f"Error loading index page: {e}")
         return render(request, 'error.html', {'error': 'Failed to load data. Please try again.'})
 
 
@@ -147,7 +130,6 @@ def place_order(request):
                 response = session['obj'].placeOrderFullResponse(form.cleaned_data)
                 return render(request, 'order_confirmation.html', {'response': response})
             except Exception as e:
-                logger.exception(f"Error placing order: {e}")
                 return render(request, 'error.html', {'error': 'Order placement failed.'})
         else:
             return render(request, 'order.html', {'form': form, 'errors': form.errors})
@@ -156,38 +138,17 @@ def place_order(request):
     return render(request, "order.html", {'form': form})
 
 
-def paper_trade(request):
-    if request.method == 'POST':
-        symbol = Symbol.objects.all()
-        form = PaperTradeForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect("index")
-        else:
-            return JsonResponse({"status": "error", "message": "Form validation failed.", "errors": form.errors})
-    
-    form = PaperTradeForm()
-    return render(request, 'papertrade.html', {'form': form})
-
-
-
 
 
 def get_symbol_data(request):
     session = get_smartapi_session()
     tradingsymbol_id = request.GET.get("tradingsymbol")
-    exchange_value = request.GET.get("exchange")  
 
-    if tradingsymbol_id and exchange_value:
+    if tradingsymbol_id:
         try:
             symbol = Symbol.objects.get(id=tradingsymbol_id)
-            exchange_map = {
-                '1': 'NSE',
-                '2': 'NFO',
-            }
-            exchange = exchange_map.get(exchange_value)
-            
-            market_data = session['obj'].ltpData(exchange, symbol.symbol, symbol.symboltoken)
+
+            market_data = session['obj'].ltpData("NSE", symbol.symbol, symbol.symboltoken)
             
             if market_data.get("status") and "data" in market_data:
                 price = market_data["data"].get("ltp", 0)
@@ -207,7 +168,6 @@ def get_symbol_data(request):
 
 def order_page(request):
     if request.method == "POST":
-        # Handle closing the order
         order_id = request.POST.get("order_id")
         close_price = request.POST.get("close_price")
         
@@ -224,9 +184,56 @@ def order_page(request):
     
     # Show open orders
     open_orders = PaperTrade.objects.filter(is_live=True)
-    closed_orders = PaperTrade.objects.filter(is_live=False)
+    closed_orders = PaperTrade.objects.filter(is_live=False).order_by('-id')
     context = {
         "open_orders": open_orders,
         "closed_orders": closed_orders
         }
     return render(request, "orderpage.html", context)
+
+
+
+
+def paper_trade(request):
+    if request.method == 'POST':
+        form = PaperTradeForm(request.POST)
+        if form.is_valid():
+            cleaned_data = form.cleaned_data
+            symbol = cleaned_data.get("tradingsymbol")
+            symboltoken = cleaned_data.get("symboltoken")
+            variety = cleaned_data.get("variety")
+            transactiontype = cleaned_data.get("transactiontype")
+            ordertype = cleaned_data.get("ordertype")
+            producttype = cleaned_data.get("producttype")
+            price = cleaned_data.get("price")
+            quantity = cleaned_data.get("quantity")
+            
+            PaperTrade.objects.create(
+                tradingsymbol=symbol,
+                symboltoken=symboltoken,
+                variety=variety,
+                transactiontype=transactiontype,
+                ordertype=ordertype,
+                producttype=producttype,
+                price=price,
+                quantity=quantity,
+            )
+            
+            return redirect("order_page")
+        else:
+            return JsonResponse({"status": "error", "message": "Form validation failed.", "errors": form.errors})
+    
+    form = PaperTradeForm()
+    return render(request, 'papertrade.html', {'form': form})
+
+def portfolio(request):
+    session = get_smartapi_session()
+    user = session['obj'].getProfile(session['refreshToken'])['data']
+    holdings = session['obj'].allholding()
+    tradeBook = session['obj'].tradeBook()
+    context = {
+        'user': user,
+        'holdings': holdings,
+        'tradeBook': tradeBook
+    }
+    return render(request, 'portfolio.html', context)

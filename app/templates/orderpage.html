@@ -3,89 +3,211 @@
 {% if user %}
 
 <div class="container mt-3">
-  <h3>Open Orders</h3>
-  <table class="table table-bordered table-hover shadow">
-    <tr>
-      <th scope="col">ID</th>
-      <th scope="col">Symbol</th>
-      <th scope="col">Quantity</th>
-      <th scope="col">Price</th>
-      <th scope="col">P/L</th>
-      <th scope="col">Actions</th>
-    </tr>
-    {% for order in open_orders %}
-    <tr>
-      <td scope="col">{{ order.id }}</td>
-      <td>{{ order.tradingsymbol }}</td>
-      <td>{{ order.quantity }}</td>
-      <td>{{ order.price }}</td>
-      <td>Null</td>
-      <td>
-        <button class="btn btn-outline-dark btn-sm" onclick="closeOrder('{{ order.id }}')">Close Order</button>
-      </td>
-    </tr>
-    {% empty %}
-    <tr>
-      <td colspan="7">No open orders available.</td>
-    </tr>
-    {% endfor %}
-  </table>
-</div>
-<div class="container">
-  <h3>Closed Orders</h3>
-  <table class="table table-bordered table-hover shadow">
-    <tr>
-      <th scope="col">ID</th>
-      <th scope="col">Symbol</th>
-      <th scope="col">Quantity</th>
-      <th scope="col">Price</th>
-      <th scope="col">Closing Price</th>
-      <th scope="col">P/L</th>
-    </tr>
-    {% for order in closed_orders %}
-    <tr>
-      <td scope="col">{{ order.id }}</td>
-      <td>{{ order.tradingsymbol }}</td>
-      <td>{{ order.quantity }}</td>
-      <td>{{ order.price }}</td>
-      <td>{{ order.close_price }}</td>
-      <td>Null</td>
-    </tr>
-    {% empty %}
-    <tr>
-      <td colspan="7">No closed orders available.</td>
-    </tr>
-    {% endfor %}
-  </table>
+  <h3  class="text-center mb-4">Live Trades</h3>
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover shadow">
+      <thead class="thead-light">
+        <tr>
+          <th scope="col">ID</th>
+          <th scope="col">Symbol</th>
+          <th scope="col">Quantity</th>
+          <th scope="col">Trade Type</th>
+          <th scope="col">Price</th>
+          <th scope="col">Current Price</th>
+          <th scope="col">P/L</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in open_orders %}
+        <tr data-price="{{ order.price }}" data-quantity="{{ order.quantity }}"
+          data-transactiontype="{{ order.transactiontype }}" data-symboltoken="{{order.symboltoken}}">
+          <td>{{ order.id }}</td>
+          <td>{{ order.tradingsymbol }}</td>
+          <td>{{ order.quantity }}</td>
+          <td>{% if order.transactiontype == "1" %}Buy{% else %}Sell{% endif %}</td>
+          <td>{{ order.price }}</td>
+          <td>
+            <span class="m-auto" id="data-output-{{ order.symboltoken }}">loading...</span>
+          </td>
+          <td><span id="pl-output-{{ order.symboltoken }}">-</span></td>
+          <td>
+            <button class="btn btn-outline-dark btn-sm" onclick="closeOrder('{{ order.id }}', '{{ order.symboltoken }}')">
+              Close Order
+            </button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7">No open orders available.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
-<script>
-  function closeOrder(orderId) {
-      const closePrice = prompt("Enter the closing price:");
-      if (closePrice) {
-          fetch("", {
-              method: "POST",
-              headers: {
-                  "Content-Type": "application/x-www-form-urlencoded",
-                  "X-CSRFToken": "{{ csrf_token }}"
-              },
-              body: new URLSearchParams({
-                  order_id: orderId,
-                  close_price: closePrice
-              })
-          })
-          .then(response => response.json())
-          .then(data => {
-              if (data.success) {
-                  alert(data.success);
-                  location.reload(); // Reload the page to update the list
-              } else {
-                  alert(data.error);
-              }
-          })
-          .catch(error => console.error("Error:", error));
-      }
+<div class="container">
+  <h3  class="text-center mb-4">Trade History</h3>
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover shadow">
+      <thead class="thead-light">
+        <tr>
+          <th scope="col">ID</th>
+          <th scope="col">Symbol</th>
+          <th scope="col">Quantity</th>
+          <th scope="col">Trade Type</th>
+          <th scope="col">Price</th>
+          <th scope="col">Closing Price</th>
+          <th scope="col">P/L</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in closed_orders %}
+        <tr>
+          <td>{{ order.id }}</td>
+          <td>{{ order.tradingsymbol }}</td>
+          <td>{{ order.quantity }}</td>
+          <td>{% if order.transactiontype == "1" %}Buy{% else %}Sell{% endif %}</td>
+          <td>{{ order.price }}</td>
+          <td>{{ order.close_price }}</td>
+          <td>{{ order.profit_loss }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7">No closed orders available.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<style>
+  .table {
+    font-size: 0.9rem;
   }
+  .table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+  }
+  th, td {
+    vertical-align: middle;
+    text-align: center;
+  }
+  .btn-outline-dark {
+    font-size: 0.8rem;
+  }
+  h3 {
+    font-weight: 600;
+    color: #343a40;
+  }
+</style>
+
+<script>
+  const ws = new WebSocket('ws://localhost:8000/ws/live-data/');
+  const previousPrices = {};
+
+  ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+
+    if (data.live_data && Array.isArray(data.live_data)) {
+      data.live_data.forEach(item => {
+        const token = item.token;
+        const ltp = item.last_traded_price;
+
+        if (token && ltp) {
+          const dataElement = document.getElementById(`data-output-${token}`);
+          const plElement = document.getElementById(`pl-output-${token}`);
+
+          if (dataElement && plElement) {
+            const rowElement = dataElement.closest("tr");
+
+            // Get order details from data attributes
+            const orderPrice = parseFloat(rowElement.dataset.price || 0);
+            const orderQuantity = parseInt(rowElement.dataset.quantity || 0, 10);
+            const transactionType = parseInt(rowElement.dataset.transactiontype || 1, 10);
+
+            // Update live price color
+            const previousLTP = previousPrices[token] || 0;
+
+            if (ltp > previousLTP) {
+              dataElement.style.color = 'green';
+            } else if (ltp < previousLTP) {
+              dataElement.style.color = 'red';
+            } else {
+              dataElement.style.color = 'black';
+            }
+
+            // Update live price
+            dataElement.textContent = `${ltp / 100}`;
+
+            // Calculate P/L
+            const orderType = transactionType === 1 ? 'BUY' : 'SELL';
+
+            
+            let profitLoss;
+            if (orderType === 'BUY') {
+              profitLoss = ((ltp / 100) - orderPrice) * orderQuantity;
+            } else if (orderType === 'SELL') {
+              profitLoss = (orderPrice - (ltp / 100)) * orderQuantity;
+            }
+            
+            // Update P/L display
+            plElement.textContent = profitLoss.toFixed(2);
+            plElement.style.color = profitLoss >= 0 ? 'green' : 'red';
+
+            // Update previous prices
+            previousPrices[token] = ltp;
+          }
+        }
+      });
+    } else {
+      console.error('Unexpected data format or no live_data:', data);
+    }
+  };
+
+  function closeOrder(orderId, token) {
+    // Get the current LTP from the live data
+    const ltpElement = document.getElementById(`data-output-${token}`);
+    const currentLTP = ltpElement ? parseFloat(ltpElement.textContent || 0) : 0;
+
+    if (currentLTP === 0) {
+      alert("Unable to fetch the live price. Please try again.");
+      return;
+    }
+
+    // Prompt for the closing price, defaulting to the live LTP
+    const closePrice = prompt(
+      `Enter the closing price (default: ${currentLTP.toFixed(2)}):`,
+      currentLTP.toFixed(2)
+    );
+
+    if (closePrice) {
+      // Send data to the server
+      fetch("", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: new URLSearchParams({
+          order_id: orderId,
+          close_price: closePrice,
+        })
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert(data.success);
+            location.reload(); // Reload the page to update the list
+          } else {
+            alert(data.error);
+          }
+        })
+        .catch(error => console.error("Error:", error));
+    }
+  }
+
 </script>
 
 {% else %}
