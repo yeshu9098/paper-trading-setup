@@ -1,10 +1,10 @@
 from django.contrib import admin
-from .models import PaperTrade, Symbol
+from .models import Trade, Stock
 
 # Register your models here.
 
-@admin.register(PaperTrade)
-class PaperTradeAdmin(admin.ModelAdmin):
-    list_display = ('id', 'tradingsymbol', 'transactiontype', 'quantity', 'price', 'date_created')
+@admin.register(Trade)
+class TradeAdmin(admin.ModelAdmin):
+    list_display = ('id', 'stock', 'transaction', 'quantity', 'price', 'date_created')
 
-admin.site.register(Symbol)
+admin.site.register(Stock)

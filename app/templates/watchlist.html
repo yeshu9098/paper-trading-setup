@@ -11,13 +11,13 @@
 
 <form method="post" action="">
     {% csrf_token %}
-    <input type="hidden" name="form_type" value="add_symbol_form">
+    <input type="hidden" name="form_type" value="add_stock_form">
     <div>
         <ul class="list-group" style="text-align: center; margin: 10px 5px">
-            {% for symbol in search_results %}
+            {% for stock in search_results %}
             <li class="list-group-item d-flex justify-content-between align-items-center">
-                {{ symbol.token }} - {{ symbol.symbol }} -- {{ symbol.name }}
-                <button type="submit" name="add_symbol" value="{{ symbol.symbol }}|{{ symbol.token }}"
+                {{ stock.token }} - {{ stock.symbol }} -- {{ stock.name }}
+                <button type="submit" name="add_stock" value="{{ stock.symbol }}|{{ stock.token }}"
                     class="btn btn-outline-dark btn-sm">+</button>
             </li>
             {% endfor %}
@@ -27,73 +27,53 @@
 
 {% else %}
 
-<div>
+<div id="watchlist-container">
+    <div class="d-flex justify-content-between p-3">
+        <h5 class="">WatchList</h5>
+        <button id="edit-button" class="btn btn-success btn-sm">Edit</button>
+    </div>
+
     <ul class="list-group" style="text-align: center; margin: 10px 5px">
-        {% for symbol in watch_list %}
+        {% for stock in watch_list %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span class="symbol-name">{{ stock.stock }}</span>
+
+            <div class="symbol-actions d-flex align-items-center">
+                <pre class="m-auto" id="data-output-{{ stock.token }}">loading...</pre>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+
+
+
+
+<div id="editable-watchlist-container" style="display: none;">
+    <div class="d-flex justify-content-between">
+        <h5 class="m-2">WatchList</h5>
+        <button id="cancel-button" class="btn btn-danger btn-sm m-2">Cancel</button>
+    </div>
+
+    <ul class="list-group" style="text-align: center; margin: 10px 5px">
+        {% for stock in watch_list %}
         <form method="post" style="margin: 0; padding: 0;">
             {% csrf_token %}
-            <input type="hidden" name="form_type" value="remove_symbol_form">
+            <input type="hidden" name="form_type" value="remove_stock_form">
             <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span class="symbol-name">{{ symbol.symbol }}</span>
+                <span class="symbol-name">{{ stock.stock }}</span>
 
                 <div class="symbol-actions d-flex align-items-center">
-                    <pre class="m-auto" id="data-output-{{ symbol.symboltoken }}">loading...</pre>
-                    <button type="submit" name="remove_symbol" value="{{ symbol.symboltoken }}"
-                        class="btn btn-remove">x</button>
+                    <button type="submit" name="remove_stock" value="{{ stock.token }}"
+                        class="btn btn-remove btn-sm">x</button>
                 </div>
             </li>
         </form>
         {% endfor %}
     </ul>
 </div>
-<style>
-    .list-group-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 15px;
-    }
-
-    .symbol-name {
-        flex: 1;
-        text-align: left;
-    }
-
-    .symbol-actions {
-        display: flex;
-        align-items: center;
-    }
-
-    pre {
-        margin: 0;
-        font-size: 0.9rem;
-    }
-
-    .btn-remove {
-        background: none;
-        border: none;
-        font-size: 1.2rem;
-        cursor: pointer;
-        padding: 0px 0px 5px 0px;
-        margin-left: 10px;
-    }
-
-    .btn-remove:hover {
-        color: red;
-    }
-
-    .btn-remove:focus {
-        outline: none;
-    }
-
-    .btn-outline-dark {
-        margin-left: 10px;
-    }
-</style>
-
 
 {% endif %}
-
 
 <script>
     const ws = new WebSocket('ws://localhost:8000/ws/live-data/');
@@ -148,3 +128,68 @@
         document.getElementById('error-message').textContent = 'WebSocket connection closed';
     };
 </script>
+
+<script>
+    // Get references to both containers and buttons
+    const watchlistContainer = document.getElementById('watchlist-container');
+    const editableWatchlistContainer = document.getElementById('editable-watchlist-container');
+    const editButton = document.getElementById('edit-button');
+    const cancelButton = document.getElementById('cancel-button');
+
+    // Toggle to show the editable section
+    editButton.addEventListener('click', () => {
+        watchlistContainer.style.display = 'none';
+        editableWatchlistContainer.style.display = 'block';
+    });
+
+    // Toggle back to the original WatchList section
+    cancelButton.addEventListener('click', () => {
+        editableWatchlistContainer.style.display = 'none';
+        watchlistContainer.style.display = 'block';
+    });
+</script>
+
+<style>
+    .list-group-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 15px;
+    }
+
+    .symbol-name {
+        flex: 1;
+        text-align: left;
+    }
+
+    .symbol-actions {
+        display: flex;
+        align-items: center;
+    }
+
+    pre {
+        margin: 0;
+        font-size: 0.9rem;
+    }
+
+    .btn-remove {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 0px 0px 5px 0px;
+        margin-left: 10px;
+    }
+
+    .btn-remove:hover {
+        color: red;
+    }
+
+    .btn-remove:focus {
+        outline: none;
+    }
+
+    .btn-outline-dark {
+        margin-left: 10px;
+    }
+</style>

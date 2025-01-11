@@ -7,10 +7,11 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <a class="nav-link " aria-current="page" href="{% url 'portfolio' %}">Portfolio</a>
-        <a class="nav-link " aria-current="page" href="{% url 'place_order' %}">Place Order</a>
-        <a class="nav-link " aria-current="page" href="{% url 'paper_trade' %}">Paper Trade</a>
-        <a class="nav-link " aria-current="page" href="{% url 'order_page' %}">Order Page</a>
+        <!-- <a class="nav-link " aria-current="page" href="{% url 'holdings' %}">Holdings</a> -->
+        <!-- <a class="nav-link " aria-current="page" href="{% url 'place_order' %}">Place Order</a> -->
+        <a class="nav-link " aria-current="page" href="{% url 'trade' %}">Trade</a>
+        <a class="nav-link " aria-current="page" href="{% url 'order_page' %}">History</a>
+        <a class="nav-link " aria-current="page" href="{% url 'analytics' %}">Analytics</a>
       </ul>
       <div>
         <a class="nav-link text-white" aria-current="page" href="#">{{ user.name }}</a>

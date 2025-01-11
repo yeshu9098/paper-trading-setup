@@ -6,10 +6,10 @@
 
             <input type="hidden" name="form_type" value="candle_data_form">
 
-            <select name="symboltoken" class="form-select form-select-sm" id="symboltoken" required>
-                <option value="" disabled selected>Select symbol</option>
-                {% for result in watch_list %}
-                <option value="{{ result.symboltoken }}">{{ result.symbol }}</option>
+            <select name="token" class="form-select form-select-sm" id="token" required>
+                <option value="" disabled selected>Select stock</option>
+                {% for stock in watch_list %}
+                <option value="{{ stock.token }}">{{ stock.stock }}</option>
                 {% endfor %}
             </select>
 

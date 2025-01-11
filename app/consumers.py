@@ -2,7 +2,7 @@ import json
 import asyncio
 import requests
 from channels.generic.websocket import AsyncWebsocketConsumer
-from app.models import Symbol
+from app.models import Stock
 from asgiref.sync import sync_to_async
 
 FLASK_APP_URL = "http://127.0.0.1:5000/live-data"

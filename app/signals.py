@@ -1,6 +1,6 @@
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
-from .models import Symbol
+from .models import Stock
 import requests
 
 
@@ -8,7 +8,7 @@ FLASK_URL = "http://127.0.0.1:5000/update-tokens"
 
 def send_token_list_to_flask():
     try:
-        tokens = list(Symbol.objects.values_list('symboltoken', flat=True))
+        tokens = list(Stock.objects.values_list('token', flat=True))
         print(tokens)
         token_list = [
             {
@@ -28,15 +28,15 @@ def send_token_list_to_flask():
     except requests.RequestException as e:
         print(f"Error sending token list to Flask: {e}")
 
-@receiver(post_save, sender=Symbol)
+@receiver(post_save, sender=Stock)
 def handle_symbol_save(sender, instance, created, **kwargs):
-    """Trigger when a Symbol is added or updated."""
-    print(f"Symbol saved: {instance}")
+    """Trigger when a Stock is added or updated."""
+    print(f"Stock saved: {instance}")
     send_token_list_to_flask()
 
 
-@receiver(post_delete, sender=Symbol)
+@receiver(post_delete, sender=Stock)
 def handle_symbol_delete(sender, instance, **kwargs):
-    """Trigger when a Symbol is deleted."""
-    print(f"Symbol deleted: {instance}")
+    """Trigger when a Stock is deleted."""
+    print(f"Stock deleted: {instance}")
     send_token_list_to_flask()

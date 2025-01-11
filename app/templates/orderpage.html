@@ -9,7 +9,7 @@
       <thead class="thead-light">
         <tr>
           <th scope="col">ID</th>
-          <th scope="col">Symbol</th>
+          <th scope="col">Stock</th>
           <th scope="col">Quantity</th>
           <th scope="col">Trade Type</th>
           <th scope="col">Price</th>
@@ -21,18 +21,18 @@
       <tbody>
         {% for order in open_orders %}
         <tr data-price="{{ order.price }}" data-quantity="{{ order.quantity }}"
-          data-transactiontype="{{ order.transactiontype }}" data-symboltoken="{{order.symboltoken}}">
+          data-transaction="{{ order.transaction }}" data-token="{{order.token}}">
           <td>{{ order.id }}</td>
-          <td>{{ order.tradingsymbol }}</td>
+          <td>{{ order.stock }}</td>
           <td>{{ order.quantity }}</td>
-          <td>{% if order.transactiontype == "1" %}Buy{% else %}Sell{% endif %}</td>
+          <td>{% if order.transaction == "1" %}Buy{% else %}Sell{% endif %}</td>
           <td>{{ order.price }}</td>
           <td>
-            <span class="m-auto" id="data-output-{{ order.symboltoken }}">loading...</span>
+            <span class="m-auto" id="data-output-{{ order.token }}">loading...</span>
           </td>
-          <td><span id="pl-output-{{ order.symboltoken }}">-</span></td>
+          <td><span id="pl-output-{{ order.token }}">-</span></td>
           <td>
-            <button class="btn btn-outline-dark btn-sm" onclick="closeOrder('{{ order.id }}', '{{ order.symboltoken }}')">
+            <button class="btn btn-outline-dark btn-sm" onclick="closeOrder('{{ order.id }}', '{{ order.token }}')">
               Close Order
             </button>
           </td>
@@ -54,7 +54,7 @@
       <thead class="thead-light">
         <tr>
           <th scope="col">ID</th>
-          <th scope="col">Symbol</th>
+          <th scope="col">Stock</th>
           <th scope="col">Quantity</th>
           <th scope="col">Trade Type</th>
           <th scope="col">Price</th>
@@ -66,9 +66,9 @@
         {% for order in closed_orders %}
         <tr>
           <td>{{ order.id }}</td>
-          <td>{{ order.tradingsymbol }}</td>
+          <td>{{ order.stock }}</td>
           <td>{{ order.quantity }}</td>
-          <td>{% if order.transactiontype == "1" %}Buy{% else %}Sell{% endif %}</td>
+          <td>{% if order.transaction == "1" %}Buy{% else %}Sell{% endif %}</td>
           <td>{{ order.price }}</td>
           <td>{{ order.close_price }}</td>
           <td>{{ order.profit_loss }}</td>
@@ -125,7 +125,7 @@
             // Get order details from data attributes
             const orderPrice = parseFloat(rowElement.dataset.price || 0);
             const orderQuantity = parseInt(rowElement.dataset.quantity || 0, 10);
-            const transactionType = parseInt(rowElement.dataset.transactiontype || 1, 10);
+            const transaction = parseInt(rowElement.dataset.transaction || 1, 10);
 
             // Update live price color
             const previousLTP = previousPrices[token] || 0;
@@ -142,7 +142,7 @@
             dataElement.textContent = `${ltp / 100}`;
 
             // Calculate P/L
-            const orderType = transactionType === 1 ? 'BUY' : 'SELL';
+            const orderType = transaction === 1 ? 'BUY' : 'SELL';
 
             
             let profitLoss;

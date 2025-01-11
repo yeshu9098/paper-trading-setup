@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Analytics{% endblock %}
+{% block body %}
+{% if user %}
+
+<div class="container mt-4">
+    <div class="card mb-5">
+        <div class="card-header">
+            <h3>Analytics</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <!-- Metrics Overview -->
+                <div class="col-md-6">
+                    <div class="row">
+                        <div class="col">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h4>General Metrics</h4>
+                                    <p><strong>Total Orders:</strong> {{ total_orders }}</p>
+                                    <p><strong>Total Profit Trades:</strong> {{ total_profit_trades }}</p>
+                                    <p><strong>Total Loss Trades:</strong> {{ total_loss_trades }}</p>
+                                    <p><strong>Live Trades:</strong> {{ live_trades }}</p>
+                                    <p><strong>Win Rate:</strong> {{ win_rate }}%</p>
+                                    <p><strong>Net Profit/Loss:</strong> {{ net_profit_loss }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="card mt-3 mb-3">
+                                <div class="card-body">
+                                    <h4>Profit/Loss Details</h4>
+                                    <p><strong>Average Profit:</strong> {{ avg_profit }}</p>
+                                    <p><strong>Average Loss:</strong> {{ avg_loss }}</p>
+                                    <p><strong>Max Profit:</strong> {{ max_profit }}</p>
+                                    <p><strong>Max Loss:</strong> {{ max_loss }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Additional Statistics -->
+                <div class="col-md-6">
+                    <div class="row">
+                        <div class="col">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h4>Profit vs Loss</h4>
+                                    <!-- <canvas id="profitLossChart" class="profit-loss-chart"></canvas> -->
+                                    <div style="width: 300px; height: 300px; margin: 0 auto;">
+                                        <canvas id="profitLossChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="card mt-3">
+                                <div class="card-body">
+                                    <h4>Stock Breakdown</h4>
+                                    <table class="table table-bordered table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Stock</th>
+                                                <th>Total Trades</th>
+                                                <th>Total Profit</th>
+                                                <th>Total Loss</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for stock in stock_breakdown %}
+                                            <tr>
+                                                <td>{{ stock.stock }}</td>
+                                                <td>{{ stock.total_trades }}</td>
+                                                <td>{{ stock.total_profit }}</td>
+                                                <td>{{ stock.total_loss }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const profitLossData = JSON.parse('{{ profit_loss|safe }}');
+
+    const ctx = document.getElementById('profitLossChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: ['Profit', 'Loss'],
+            datasets: [{
+                data: [profitLossData.Profit, profitLossData.Loss],
+                backgroundColor: ['#007bff', '#dc3545'],
+                borderColor: ['#fff', '#fff'],
+                borderWidth: 1,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Profit vs Loss',
+                    font: {
+                        size: 16,
+                    },
+                },
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (tooltipItem) {
+                            return tooltipItem.label + ": " + tooltipItem.raw.toFixed(2);
+                        },
+                    },
+                },
+            },
+            maintainAspectRatio: true,
+        },
+    });
+</script>
+{% block styles %}
+<style>
+    table {
+        width: 100%;
+        margin-top: 20px;
+    }
+
+    th,
+    td {
+        text-align: center;
+    }
+</style>
+{% endblock %}
+{% else %}
+<p>No user data passed.</p>
+{% endif %}
+{% endblock %}

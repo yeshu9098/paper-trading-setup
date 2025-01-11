@@ -1,6 +1,5 @@
 import pyotp
 from SmartApi import SmartConnect
-import logging
 from decouple import config
 
 
