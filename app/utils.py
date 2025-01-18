@@ -14,7 +14,6 @@ def get_smartapi_session():
     try:
         totp = pyotp.TOTP(TOKEN).now()
         obj = SmartConnect(API_KEY)
-        print(obj)
         data = obj.generateSession(USERNAME, PASSWORD, totp)
         return {
             "obj": obj,
