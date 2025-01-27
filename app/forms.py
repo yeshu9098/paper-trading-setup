@@ -17,15 +17,15 @@ class TradeForm(forms.Form):
          widget=forms.HiddenInput()
      )
 
-    ORDERTYPE = (
-        (1, 'MARKET'),
-        (2, 'STOPLOSS'),
-        (3, 'LIMIT')
-    )
-    order = forms.ChoiceField(
-        choices=ORDERTYPE,
-        widget=forms.Select(attrs={'class': 'form-select form-select-sm'})
-    )
+    # ORDERTYPE = (
+    #     (1, 'MARKET'),
+    #     (2, 'STOPLOSS'),
+    #     (3, 'LIMIT')
+    # )
+    # order = forms.ChoiceField(
+    #     choices=ORDERTYPE,
+    #     widget=forms.Select(attrs={'class': 'form-select form-select-sm'})
+    # )
 
     TRANSACTIONTYPE = (
         (1, 'BUY'),

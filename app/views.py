@@ -45,6 +45,11 @@ def index(request):
         }
 
         try:
+            try:
+                stock_name = Stock.objects.get(token=token)
+            except Stock.DoesNotExist:
+                stock_name = "SBIN"
+            timestamp = interval
             chart_data = session['obj'].getCandleData(historic_param)
             columns = ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
             candle_data = pd.DataFrame(chart_data['data'], columns=columns)
@@ -71,6 +76,8 @@ def index(request):
                 }
         
             try:
+                stock_name = Stock.objects.get(token=token)
+                timestamp = interval
                 chart_data = session['obj'].getCandleData(historic_param)
                 columns = ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
                 candle_data = pd.DataFrame(chart_data['data'], columns=columns)
@@ -119,6 +126,8 @@ def index(request):
         
 
         context = {
+            "stock_name":stock_name,
+            "timestamp":timestamp,
             "user": user,
             "holdings": holdings,
             "candle_data_json": candle_data_json,
@@ -215,7 +224,7 @@ def trade(request):
             stock = cleaned_data.get("stock")
             token = cleaned_data.get("token")
             transaction = cleaned_data.get("transaction")
-            order = cleaned_data.get("order")
+            # order = cleaned_data.get("order")
             price = cleaned_data.get("price")
             quantity = cleaned_data.get("quantity")
             
@@ -223,7 +232,7 @@ def trade(request):
                 stock=stock,
                 token=token,
                 transaction=transaction,
-                order=order,
+                # order=order,
                 price=price,
                 quantity=quantity,
             )

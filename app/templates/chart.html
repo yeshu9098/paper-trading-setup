@@ -2,7 +2,7 @@
     <form action="" method="post">
         {% csrf_token %}
 
-        <div class="d-flex justify-content-center align-items-center gap-2 p-3">
+        <div class="d-flex justify-content-center align-items-center gap-2 p-2">
 
             <input type="hidden" name="form_type" value="candle_data_form">
 
@@ -29,6 +29,11 @@
     </form>
 </div>
 
+<div class="stock-info" style="text-align: left; margin: 5px 20px; font-size: 16px; font-family: Arial, sans-serif; color: #333;">
+    <span id="infoStock">{{ stock_name }}</span> | 
+    <span id="infoInterval">{{ timestamp }}</span>
+</div>
+
 <div id="chartContainer" class="p-1" style="height: 500px; width: 99%"></div>
 
 <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
@@ -38,13 +43,20 @@
         const data = JSON.parse('{{ candle_data_json|safe }}');
 
         // Transform the data for TradingView Lightweight Charts
-        const candlestickData = data.map(d => ({
-            time: new Date(d.Timestamp).getTime() / 1000, // Convert to UNIX timestamp
-            open: d.Open,
-            high: d.High,
-            low: d.Low,
-            close: d.Close,
-        }));
+        const candlestickData = data.map(d => {
+            const utcTimestamp = new Date(d.Timestamp).getTime() / 1000;
+            
+            // Convert to IST (UTC + 5:30)
+            const istTimestamp = utcTimestamp + (5.5 * 60 * 60); // Add 5.5 hours for IST
+
+            return {
+                time: istTimestamp, // Use IST timestamp for the chart
+                open: d.Open,
+                high: d.High,
+                low: d.Low,
+                close: d.Close,
+            }
+        });
 
         // Create the chart container
         const chartContainer = document.getElementById('chartContainer');
@@ -65,6 +77,8 @@
             },
             timeScale: {
                 borderColor: '#cccccc',
+                timeVisible: true, // Make time visible
+                secondsVisible: false, // Hide seconds
             },
             priceScale: {
                 borderColor: '#cccccc',
@@ -74,6 +88,25 @@
         // Add candlestick series to the chart
         const candlestickSeries = chart.addCandlestickSeries();
         candlestickSeries.setData(candlestickData);
+
+        // Function to format timestamp to IST for display
+        function formatTimestampToIST(timestamp) {
+            const date = new Date(timestamp * 1000); // Convert UNIX timestamp to Date object
+            const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC + 5.5 hours
+            const istDate = new Date(date.getTime() + istOffset); // Adjust for IST timezone
+
+            return `${istDate.getDate()}/${istDate.getMonth() + 1}/${istDate.getFullYear()} ${String(istDate.getHours()).padStart(2, '0')}:${String(istDate.getMinutes()).padStart(2, '0')}`;
+        }
+
+        // Subscribe to crosshair move to display info on hover
+        chart.subscribeCrosshairMove(function(param) {
+            if (!param || !param.time) return;
+            
+            const formattedTime = formatTimestampToIST(param.time); // Convert to IST
+
+            // Optionally, update the displayed information on hover
+            console.log(formattedTime); // You can display this wherever you need
+        });
 
         // Adjust chart size dynamically on window resize
         window.addEventListener('resize', () => {

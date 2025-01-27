@@ -3,3 +3,5 @@ __pycache__/
 logs/
 db.sqlite3
 OpenAPIScripMaster.json
+livestream/
+app/migrations/

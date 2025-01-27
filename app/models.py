@@ -15,7 +15,7 @@ class Trade(models.Model):
     stock = models.CharField(max_length=50)
     token = models.CharField(max_length=20)
     transaction = models.CharField(max_length=20)
-    order = models.CharField(max_length=20)
+    # order = models.CharField(max_length=20)
     price = models.IntegerField()
     quantity = models.IntegerField()
     is_live = models.BooleanField(default=True)
