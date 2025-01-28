@@ -16,7 +16,7 @@ class Trade(models.Model):
     token = models.CharField(max_length=20)
     transaction = models.CharField(max_length=20)
     # order = models.CharField(max_length=20)
-    price = models.IntegerField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
     quantity = models.IntegerField()
     is_live = models.BooleanField(default=True)
     date_created = models.DateTimeField(auto_now_add=True, verbose_name="Date Created")

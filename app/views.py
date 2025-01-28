@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
+from django.core.paginator import Paginator
 from .utils import get_smartapi_session
 from .forms import TradeForm
 import pandas as pd
@@ -11,6 +12,7 @@ from django.utils.timezone import now
 import os
 from django.conf import settings
 from django.db.models import Sum, Avg, Count, Max, Min, Case, When, FloatField
+from django.db.models.functions import Round
 
 
 
@@ -89,7 +91,6 @@ def index(request):
 
         if form_type == 'search_form':
             symbol = request.POST.get('symbol').upper()
-            print(symbol)
             # url = 'https://margincalculator.angelbroking.com/OpenAPI_File/files/OpenAPIScripMaster.json'
             # try:
             #     data = requests.get(url).json()
@@ -99,7 +100,6 @@ def index(request):
                     raise Exception("Failed to load scrip data.")
             
                 matching_data = [item for item in data if symbol in item['symbol']]
-                print(matching_data)
                 search_results = matching_data[:50]
             except Exception as e:
                 return render(request, 'error.html', {'error': 'Failed to fetch symbol data.'})
@@ -207,9 +207,14 @@ def order_page(request):
     
     open_orders = Trade.objects.filter(is_live=True)
     closed_orders = Trade.objects.filter(is_live=False).order_by('-id')
+    paginator = Paginator(closed_orders, 5)
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     context = {
         "open_orders": open_orders,
-        "closed_orders": closed_orders
+        "closed_orders": page_obj,
         }
     return render(request, "orderpage.html", context)
 
@@ -260,17 +265,23 @@ def holdings(request):
 
 
 def analytics(request):
+    # closed orders
     trades = Trade.objects.filter(is_live=False)
-
+    # total orders
     total_orders = trades.count()
 
     profit = trades.filter(profit_loss__gt=0).aggregate(total_profit=Sum('profit_loss'))['total_profit'] or 0
     loss = trades.filter(profit_loss__lt=0).aggregate(total_loss=Sum('profit_loss'))['total_loss'] or 0
+    profit_loss = {
+            'Profit': float(profit),
+            'Loss': abs(float(loss)),
+        }
+        
+    # Profit/loss trades count
     total_profit_trades = trades.filter(profit_loss__gt=0).count()
     total_loss_trades = trades.filter(profit_loss__lt=0).count()
 
     win_rate = (total_profit_trades / total_orders * 100) if total_orders > 0 else 0
-
     net_profit_loss = profit + loss
 
     avg_profit = trades.filter(profit_loss__gt=0).aggregate(avg_profit=Avg('profit_loss'))['avg_profit'] or 0
@@ -283,22 +294,19 @@ def analytics(request):
 
     stock_breakdown = trades.values('stock').annotate(
         total_trades=Count('id'),
-        total_profit=Sum(Case(
+        total_profit=Round(Sum(Case(
             When(profit_loss__gt=0, then='profit_loss'),
             default=0,
             output_field=FloatField()
-        )),
-        total_loss=Sum(Case(
+        )),2),
+        total_loss=Round(Sum(Case(
             When(profit_loss__lt=0, then='profit_loss'),
             default=0,
             output_field=FloatField()
-        )),
+        )),2)
     )
 
-    profit_loss = {
-        'Profit': float(profit),
-        'Loss': abs(float(loss)),
-    }
+    
 
     context = {
         "trades": trades,

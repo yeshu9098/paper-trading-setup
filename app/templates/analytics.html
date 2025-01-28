@@ -30,12 +30,28 @@
                     <div class="row">
                         <div class="col">
                             <div class="card mt-3 mb-3">
-                                <div class="card-body">
-                                    <h4>Profit/Loss Details</h4>
-                                    <p><strong>Average Profit:</strong> {{ avg_profit }}</p>
-                                    <p><strong>Average Loss:</strong> {{ avg_loss }}</p>
-                                    <p><strong>Max Profit:</strong> {{ max_profit }}</p>
-                                    <p><strong>Max Loss:</strong> {{ max_loss }}</p>
+                                <div class="card-body table-responsive">
+                                    <h4>Stock Breakdown</h4>
+                                    <table class="table table-bordered table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Stock</th>
+                                                <th>Total Trades</th>
+                                                <th>Total Trades Profit</th>
+                                                <th>Total Trades Loss</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for stock in stock_breakdown %}
+                                            <tr>
+                                                <td>{{ stock.stock }}</td>
+                                                <td>{{ stock.total_trades }}</td>
+                                                <td>{{ stock.total_profit }}</td>
+                                                <td>{{ stock.total_loss }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
@@ -61,29 +77,13 @@
                     </div>
                     <div class="row">
                         <div class="col">
-                            <div class="card mt-3">
+                            <div class="card mt-3 mb-3">
                                 <div class="card-body">
-                                    <h4>Stock Breakdown</h4>
-                                    <table class="table table-bordered table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th>Stock</th>
-                                                <th>Total Trades</th>
-                                                <th>Total Profit</th>
-                                                <th>Total Loss</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for stock in stock_breakdown %}
-                                            <tr>
-                                                <td>{{ stock.stock }}</td>
-                                                <td>{{ stock.total_trades }}</td>
-                                                <td>{{ stock.total_profit }}</td>
-                                                <td>{{ stock.total_loss }}</td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
+                                    <h4>Profit/Loss Details</h4>
+                                    <p><strong>Average Profit:</strong> {{ avg_profit }}</p>
+                                    <p><strong>Average Loss:</strong> {{ avg_loss }}</p>
+                                    <p><strong>Max Profit:</strong> {{ max_profit }}</p>
+                                    <p><strong>Max Loss:</strong> {{ max_loss }}</p>
                                 </div>
                             </div>
                         </div>
