@@ -41,7 +41,8 @@
     document.addEventListener('DOMContentLoaded', function () {
         // Parse candlestick data from server
         const data = JSON.parse('{{ candle_data_json|safe }}');
-
+        
+        const { createChart, CandlestickSeries } = LightweightCharts;
         // Transform the data for TradingView Lightweight Charts
         const candlestickData = data.map(d => {
             const utcTimestamp = new Date(d.Timestamp).getTime() / 1000;
@@ -60,7 +61,7 @@
 
         // Create the chart container
         const chartContainer = document.getElementById('chartContainer');
-        const chart = LightweightCharts.createChart(chartContainer, {
+        const chart = createChart(chartContainer, {
             width: chartContainer.clientWidth,
             height: 475,
             layout: {
@@ -85,8 +86,17 @@
             },
         });
 
+
+        const candlestickSeries = chart.addSeries(CandlestickSeries, {
+            upColor: '#26a69a',
+            downColor: '#ef5350',
+            borderVisible: false,
+            wickUpColor: '#26a69a',
+            wickDownColor: '#ef5350',
+        });
         // Add candlestick series to the chart
-        const candlestickSeries = chart.addCandlestickSeries();
+        // const candlestickSeries = chart.addCandlestickSeries();
+        // console.log('Candlestick Series:', candlestickSeries);
         candlestickSeries.setData(candlestickData);
 
         // Function to format timestamp to IST for display

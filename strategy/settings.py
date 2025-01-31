@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 import os
 from pathlib import Path
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,10 +21,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-8+)!*5dmj$!*ah1si58&z(^5e#zkzr-uc#dh!&oyin9oo=@7ma"
+SECRET_KEY = config('SECRET_KEY')
 
+# django-insecure-8+)!*5dmj$!*ah1si58&z(^5e#zkzr-uc#dh!&oyin9oo=@7ma
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ["*"]
 
@@ -143,3 +145,16 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels.layers.InMemoryChannelLayer",
     },
 }
+
+SESSION_COOKIE_SECURE = True  # Ensures cookies are only sent over HTTPS
+CSRF_COOKIE_SECURE = True  # Protects CSRF cookies over HTTPS
+
+SESSION_COOKIE_HTTPONLY = True  # Prevents JavaScript access to session cookies
+SESSION_COOKIE_SAMESITE = 'Lax'  # Prevents CSRF attacks
+
+SECURE_HSTS_SECONDS = 31536000  # Enforce HTTPS for a year
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_SSL_REDIRECT = True
