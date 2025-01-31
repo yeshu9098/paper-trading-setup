@@ -17,3 +17,7 @@ and for live data you need to run 'https://github.com/yeshu9098/market-live-feed
 
 - Python 3.8 or higher
 - Required
+
+## Snapshot
+
+![Image](https://res.cloudinary.com/dxakzehph/image/upload/v1738312881/n_soxnpa.png)
