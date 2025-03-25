@@ -20,6 +20,8 @@ to start the application you need to run redis-server and worker.py in seperate 
 - Redis database
 - Required
 
-## Snapshot
-
+## Snapshots
 ![Image](https://res.cloudinary.com/dxakzehph/image/upload/v1738312881/n_soxnpa.png)
+
+![Image](https://res.cloudinary.com/dxakzehph/image/upload/v1738392998/analytics_mhbcuk.png)
+
