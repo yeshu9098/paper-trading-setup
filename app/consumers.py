@@ -1,35 +1,29 @@
+# your_app/consumers.py
 import json
-import asyncio
-import requests
-from channels.generic.websocket import AsyncWebsocketConsumer
-from app.models import Stock
-from asgiref.sync import sync_to_async
+from channels.generic.websocket import WebsocketConsumer
+from redis import Redis
+import threading
+import time
 
-FLASK_APP_URL = "http://127.0.0.1:5000/live-data"
+class LivePriceConsumer(WebsocketConsumer):
+    def connect(self):
+        self.accept()
+        self.redis_client = Redis(host='localhost', port=6379, db=0)
+        self.pubsub = self.redis_client.pubsub()
+        self.pubsub.subscribe('smartapi_live_data')
+        self.running = True
+        self.thread = threading.Thread(target=self.listen_to_redis, daemon=True)
+        self.thread.start()
 
-class LiveDataConsumer(AsyncWebsocketConsumer):
-    async def connect(self):
-        await self.accept()
+    def disconnect(self, close_code):
+        self.running = False
+        self.pubsub.unsubscribe('smartapi_live_data')
+        self.redis_client.close()
 
-        self.keep_sending = True
-        self.live_data_task = asyncio.create_task(self.send_live_data())
-
-    async def disconnect(self, close_code):
-        self.keep_sending = False
-        if hasattr(self, "live_data_task"):
-            self.live_data_task.cancel()
-
-    async def send_live_data(self):
-        while self.keep_sending:
-            try:
-                response = requests.get(FLASK_APP_URL, timeout=5)
-                response.raise_for_status()
-                live_data = response.json()
-
-                await self.send(json.dumps({"live_data": live_data}))
-            except requests.RequestException as e:
-                await self.send(json.dumps({"error": str(e)}))
-            except Exception as e:
-                await self.send(json.dumps({"error": f"Unexpected error: {str(e)}"}))
-
-            await asyncio.sleep(2)
+    def listen_to_redis(self):
+        while self.running:
+            message = self.pubsub.get_message()
+            if message and message['type'] == 'message':
+                data = json.loads(message['data'].decode('utf-8'))
+                self.send(text_data=json.dumps(data))
+            time.sleep(0.1)

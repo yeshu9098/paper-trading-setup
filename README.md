@@ -4,7 +4,7 @@ tade for learning, and it also shows stock charts, holdings and order history of
 
 ## How to use
 To use this app you need to have a angel broking account and its smartapi credentials like username, password, api key, token etc.
-and for live data you need to run 'https://github.com/yeshu9098/market-live-feed.git' script in seperate terminal to fetch live data
+to start the application you need to run redis-server and worker.py in seperate terminals and then run the django application
 
 ## Features
 
@@ -16,6 +16,8 @@ and for live data you need to run 'https://github.com/yeshu9098/market-live-feed
 ## Requirements
 
 - Python 3.8 or higher
+- Smart-api credentials for live market data
+- Redis database
 - Required
 
 ## Snapshot

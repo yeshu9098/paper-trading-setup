@@ -25,7 +25,7 @@ SECRET_KEY = config('SECRET_KEY')
 
 # django-insecure-8+)!*5dmj$!*ah1si58&z(^5e#zkzr-uc#dh!&oyin9oo=@7ma
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
@@ -146,8 +146,9 @@ CHANNEL_LAYERS = {
     },
 }
 
-SESSION_COOKIE_SECURE = True  # Ensures cookies are only sent over HTTPS
-CSRF_COOKIE_SECURE = True  # Protects CSRF cookies over HTTPS
+SESSION_COOKIE_SECURE = False  # Ensures cookies are only sent over HTTPS
+CSRF_COOKIE_SECURE = False  # Protects CSRF cookies over HTTPS
+SECURE_SSL_REDIRECT = False
 
 SESSION_COOKIE_HTTPONLY = True  # Prevents JavaScript access to session cookies
 SESSION_COOKIE_SAMESITE = 'Lax'  # Prevents CSRF attacks
@@ -157,4 +158,21 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
-SECURE_SSL_REDIRECT = True
+
+
+REDIS_HOST = 'localhost'  # or your Redis server IP
+REDIS_PORT = 6379
+REDIS_CHANNEL_NAME = 'smartapi_live_data'  # Your channel name
+REDIS_DB = 0  # Default DB index
+
+# Channels layer configuration (required for WebSockets)
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [(REDIS_HOST, REDIS_PORT)],
+        },
+    },
+}
+
+SMARTAPI_REDIS_CHANNEL = "smartapi_channel"

@@ -1,9 +1,9 @@
-{% extends "base.html" %} {% block title %}Form{% endblock %}
-{% block body%}
-{% if user %}
+{% extends "base.html" %}
+{% block title %}Orders{% endblock %}
 
+{% block body %}
 <div class="container mt-3">
-  <h3  class="text-center mb-4">Live Trades</h3>
+  <h3 class="text-center mb-4">Live Trades</h3>
   <div class="table-responsive">
     <table class="table table-bordered table-hover shadow">
       <thead class="thead-light">
@@ -21,15 +21,13 @@
       <tbody>
         {% for order in open_orders %}
         <tr data-id="{{ order.id }}" data-price="{{ order.price }}" data-quantity="{{ order.quantity }}"
-          data-transaction="{{ order.transaction }}" data-token="{{order.token}}">
+          data-transaction="{{ order.transaction }}" data-token="{{ order.token }}">
           <td>{{ order.id }}</td>
           <td>{{ order.stock }}</td>
           <td>{{ order.quantity }}</td>
           <td>{% if order.transaction == "1" %}Buy{% else %}Sell{% endif %}</td>
           <td>{{ order.price }}</td>
-          <td>
-            <span class="m-auto" id="data-output-{{ order.token }}">loading...</span>
-          </td>
+          <td><span class="m-auto" id="data-output-{{ order.token }}">loading...</span></td>
           <td><span id="pl-output-{{ order.token }}">-</span></td>
           <td>
             <button class="btn btn-outline-dark btn-sm" onclick="closeOrder('{{ order.id }}', '{{ order.token }}')">
@@ -39,7 +37,7 @@
         </tr>
         {% empty %}
         <tr>
-          <td colspan="7">No open orders available.</td>
+          <td colspan="8">No open orders available.</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -48,7 +46,7 @@
 </div>
 
 <div class="container">
-  <h3  class="text-center mb-4">Trade History</h3>
+  <h3 class="text-center mb-4">Trade History</h3>
   <div class="table-responsive">
     <table class="table table-bordered table-hover shadow">
       <thead class="thead-light">
@@ -89,46 +87,26 @@
     <ul class="pagination">
       {% if closed_orders.has_previous %}
       <li class="page-item">
-        <a class="page-link" href="?page=1" aria-label="First">&laquo; First</a>
+        <a class="page-link" href="?page=1" aria-label="First">« First</a>
       </li>
       <li class="page-item">
         <a class="page-link" href="?page={{ closed_orders.previous_page_number }}" aria-label="Previous">Previous</a>
       </li>
       {% endif %}
-
       <li class="page-item disabled">
         <span class="page-link">Page {{ closed_orders.number }} of {{ closed_orders.paginator.num_pages }}</span>
       </li>
-
       {% if closed_orders.has_next %}
       <li class="page-item">
         <a class="page-link" href="?page={{ closed_orders.next_page_number }}" aria-label="Next">Next</a>
       </li>
       <li class="page-item">
-        <a class="page-link" href="?page={{ closed_orders.paginator.num_pages }}" aria-label="Last">Last &raquo;</a>
+        <a class="page-link" href="?page={{ closed_orders.paginator.num_pages }}" aria-label="Last">Last »</a>
       </li>
       {% endif %}
     </ul>
   </nav>
 </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 <style>
   .table {
@@ -150,179 +128,76 @@
   }
 </style>
 
-<!-- <script>
-  const ws = new WebSocket('ws://localhost:8000/ws/live-data/');
-  const previousPrices = {};
-
-  ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-
-    if (data.live_data && Array.isArray(data.live_data)) {
-      data.live_data.forEach(item => {
-        const token = item.token;
-        const ltp = item.last_traded_price;
-
-        if (token && ltp) {
-          const dataElement = document.getElementById(`data-output-${token}`);
-          const plElement = document.getElementById(`pl-output-${token}`);
-
-          if (dataElement && plElement) {
-            const rowElement = dataElement.closest("tr");
-
-            // Get order details from data attributes
-            const orderPrice = parseFloat(rowElement.dataset.price || 0);
-            const orderQuantity = parseInt(rowElement.dataset.quantity || 0, 10);
-            const transaction = parseInt(rowElement.dataset.transaction || 1, 10);
-
-            // Update live price color
-            const previousLTP = previousPrices[token] || 0;
-
-            if (ltp > previousLTP) {
-              dataElement.style.color = 'green';
-            } else if (ltp < previousLTP) {
-              dataElement.style.color = 'red';
-            } else {
-              dataElement.style.color = 'black';
-            }
-
-            // Update live price
-            dataElement.textContent = `${ltp / 100}`;
-
-            // Calculate P/L
-            const orderType = transaction === 1 ? 'BUY' : 'SELL';
-
-            
-            let profitLoss;
-            if (orderType === 'BUY') {
-              profitLoss = ((ltp / 100) - orderPrice) * orderQuantity;
-            } else if (orderType === 'SELL') {
-              profitLoss = (orderPrice - (ltp / 100)) * orderQuantity;
-            }
-            
-            // Update P/L display
-            plElement.textContent = profitLoss.toFixed(2);
-            plElement.style.color = profitLoss >= 0 ? 'green' : 'red';
-
-            // Update previous prices
-            previousPrices[token] = ltp;
-          }
-        }
-      });
-    } else {
-      console.error('Unexpected data format or no live_data:', data);
-    }
-  };
-
-  function closeOrder(orderId, token) {
-    // Get the current LTP from the live data
-    const ltpElement = document.getElementById(`data-output-${token}`);
-    const currentLTP = ltpElement ? parseFloat(ltpElement.textContent || 0) : 0;
-
-    if (currentLTP === 0) {
-      alert("Unable to fetch the live price. Please try again.");
-      return;
-    }
-
-    // Prompt for the closing price, defaulting to the live LTP
-    const closePrice = prompt(
-      `Enter the closing price (default: ${currentLTP.toFixed(2)}):`,
-      currentLTP.toFixed(2)
-    );
-
-    if (closePrice) {
-      // Send data to the server
-      fetch("", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "X-CSRFToken": "{{ csrf_token }}"
-        },
-        body: new URLSearchParams({
-          order_id: orderId,
-          close_price: closePrice,
-        })
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            alert(data.success);
-            location.reload(); // Reload the page to update the list
-          } else {
-            alert(data.error);
-          }
-        })
-        .catch(error => console.error("Error:", error));
-    }
-  }
-
-</script> -->
-
 <script>
-const ws = new WebSocket('ws://localhost:8000/ws/live-data/');
+const ws = new WebSocket('ws://' + window.location.host + '/ws/live-prices/');
 const previousPrices = {};
+
+ws.onopen = () => {
+  console.log('WebSocket connected');
+};
 
 ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
+  const token = data.token;
+  const ltp = data.last_traded_price / 100; // Convert to rupees
 
-  if (data.live_data && Array.isArray(data.live_data)) {
-    data.live_data.forEach(item => {
-      const token = item.token;
-      const ltp = item.last_traded_price;
+  if (token && ltp !== undefined) {
+    const rows = document.querySelectorAll(`tr[data-token="${token}"]`);
+    
+    rows.forEach(rowElement => {
+      const dataElement = document.getElementById(`data-output-${token}`);
+      const plElement = document.getElementById(`pl-output-${token}`);
 
-      if (token && ltp) {
-        // Find all rows in the table that have this token
-        const rows = document.querySelectorAll(`tr[data-token="${token}"]`);
+      if (dataElement && plElement) {
+        // Get order details from data attributes
+        const orderPrice = parseFloat(rowElement.dataset.price || 0);
+        const orderQuantity = parseInt(rowElement.dataset.quantity || 0, 10);
+        const transaction = parseInt(rowElement.dataset.transaction || 1, 10);
 
-        rows.forEach(rowElement => {
-          const orderId = rowElement.querySelector('td:first-child').textContent; // Get the order ID
-          const dataElement = rowElement.querySelector(`#data-output-${token}`);
-          const plElement = rowElement.querySelector(`#pl-output-${token}`);
+        // Update live price color
+        const previousLTP = previousPrices[token] || 0;
+        if (ltp > previousLTP) {
+          dataElement.style.color = 'green';
+        } else if (ltp < previousLTP) {
+          dataElement.style.color = 'red';
+        } else {
+          dataElement.style.color = 'black';
+        }
 
-          // Get order details from data attributes
-          const orderPrice = parseFloat(rowElement.dataset.price || 0);
-          const orderQuantity = parseInt(rowElement.dataset.quantity || 0, 10);
-          const transaction = parseInt(rowElement.dataset.transaction || 1, 10);
+        // Update live price
+        dataElement.textContent = ltp.toFixed(2);
 
-          // Update live price color
-          const previousLTP = previousPrices[token] || 0;
+        // Calculate P/L
+        const orderType = transaction === 1 ? 'BUY' : 'SELL';
+        let profitLoss;
+        if (orderType === 'BUY') {
+          profitLoss = (ltp - orderPrice) * orderQuantity;
+        } else {
+          profitLoss = (orderPrice - ltp) * orderQuantity;
+        }
 
-          if (ltp > previousLTP) {
-            dataElement.style.color = 'green';
-          } else if (ltp < previousLTP) {
-            dataElement.style.color = 'red';
-          } else {
-            dataElement.style.color = 'black';
-          }
+        // Update P/L display
+        plElement.textContent = profitLoss.toFixed(2);
+        plElement.style.color = profitLoss >= 0 ? 'green' : 'red';
 
-          // Update live price
-          dataElement.textContent = `${ltp / 100}`;
-
-          // Calculate P/L
-          const orderType = transaction === 1 ? 'BUY' : 'SELL';
-          
-          let profitLoss;
-          if (orderType === 'BUY') {
-            profitLoss = ((ltp / 100) - orderPrice) * orderQuantity;
-          } else if (orderType === 'SELL') {
-            profitLoss = (orderPrice - (ltp / 100)) * orderQuantity;
-          }
-
-          // Update P/L display
-          plElement.textContent = profitLoss.toFixed(2);
-          plElement.style.color = profitLoss >= 0 ? 'green' : 'red';
-
-          // Update previous prices
-          previousPrices[token] = ltp;
-        });
+        // Store the current price
+        previousPrices[token] = ltp;
       }
     });
   } else {
-    console.error('Unexpected data format or no live_data:', data);
+    console.error('Unexpected data format:', data);
   }
 };
 
+ws.onerror = (error) => {
+  console.error('WebSocket Error:', error);
+};
+
+ws.onclose = () => {
+  console.log('WebSocket connection closed');
+};
+
 function closeOrder(orderId, token) {
-  // Get the current LTP from the live data
   const ltpElement = document.getElementById(`data-output-${token}`);
   const currentLTP = ltpElement ? parseFloat(ltpElement.textContent || 0) : 0;
 
@@ -331,11 +206,10 @@ function closeOrder(orderId, token) {
     return;
   }
 
-  const closePrice = currentLTP.toFixed(2)
+  const closePrice = currentLTP.toFixed(2);
 
   if (closePrice) {
-    // Send data to the server
-    fetch("", {
+    fetch("/close-order/", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -350,16 +224,13 @@ function closeOrder(orderId, token) {
       .then(data => {
         if (data.success) {
           alert(data.success);
-          location.reload(); // Reload the page to update the list
+          location.reload();
         } else {
-          alert(data.error);
+          alert(data.error || "Failed to close order");
         }
       })
       .catch(error => console.error("Error:", error));
   }
 }
 </script>
-{% else %}
-No user data passed
-{% endif %}
 {% endblock %}

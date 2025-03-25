@@ -167,13 +167,11 @@ def get_stock_data(request):
     session = get_smartapi_session()
     stock_id = request.GET.get("stock")
 
-    print(stock_id)
     if stock_id:
         try:
             stock = Stock.objects.get(id=stock_id)
 
             market_data = session['obj'].ltpData("NSE", stock.stock, stock.token)
-            print(market_data)
             
             if market_data.get("status") and "data" in market_data:
                 price = market_data["data"].get("ltp", 0)
@@ -192,19 +190,6 @@ def get_stock_data(request):
 
 
 def order_page(request):
-    if request.method == "POST":
-        order_id = request.POST.get("order_id")
-        close_price = request.POST.get("close_price")
-        
-        try:
-            order = get_object_or_404(Trade, id=order_id, is_live=True)
-            close_price = float(close_price)
-            
-            order.close_order(close_price=close_price)
-            return JsonResponse({"success": "Order closed successfully!"})
-        except Exception as e:
-            return JsonResponse({"error": str(e)}, status=400)
-    
     open_orders = Trade.objects.filter(is_live=True)
     closed_orders = Trade.objects.filter(is_live=False).order_by('-id')
     paginator = Paginator(closed_orders, 5)
@@ -215,8 +200,23 @@ def order_page(request):
     context = {
         "open_orders": open_orders,
         "closed_orders": page_obj,
-        }
+    }
     return render(request, "orderpage.html", context)
+
+def close_order(request):
+    if request.method == "POST":
+        order_id = request.POST.get("order_id")
+        close_price = request.POST.get("close_price")
+        
+        try:
+            order = get_object_or_404(Trade, id=order_id, is_live=True)
+            order.close_order(close_price=float(close_price))
+            return JsonResponse({"success": "Order closed successfully!"})
+        except ValueError as e:
+            return JsonResponse({"error": str(e)}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": "Failed to close order"}, status=500)
+    return JsonResponse({"error": "Invalid request"}, status=400)
 
 
 

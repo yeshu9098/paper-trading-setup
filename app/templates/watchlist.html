@@ -1,18 +1,19 @@
-<form action="" method="post">
-    {% csrf_token %}
-    <div class="d-flex justify-content-center align-items-center gap-2 p-3">
-        <input type="hidden" name="form_type" value="search_form">
-        <input type="text" class="form-control form-control-sm" name="symbol" id="" placeholder="" required>
-        <button class="btn btn-outline-dark btn-sm" type="submit">search</button>
-    </div>
-</form>
+<div class="container">
+    <!-- Search Form -->
+    <form action="" method="post" class="mb-3">
+        {% csrf_token %}
+        <div class="d-flex justify-content-center align-items-center gap-2 p-3">
+            <input type="hidden" name="form_type" value="search_form">
+            <input type="text" class="form-control form-control-sm" name="symbol" placeholder="Search stock symbol" required>
+            <button class="btn btn-outline-dark btn-sm" type="submit">Search</button>
+        </div>
+    </form>
 
-{% if search_results %}
-
-<form method="post" action="">
-    {% csrf_token %}
-    <input type="hidden" name="form_type" value="add_stock_form">
-    <div>
+    <!-- Search Results -->
+    {% if search_results %}
+    <form method="post" action="">
+        {% csrf_token %}
+        <input type="hidden" name="form_type" value="add_stock_form">
         <ul class="list-group" style="text-align: center; margin: 10px 5px">
             {% for stock in search_results %}
             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -22,127 +23,123 @@
             </li>
             {% endfor %}
         </ul>
-    </div>
-</form>
+    </form>
 
-{% else %}
-
-<div id="watchlist-container">
-    <div class="d-flex justify-content-between p-3">
-        <h5 class="">WatchList</h5>
-        <button id="edit-button" class="btn btn-outline-success btn-sm py-0" style="font-size: 0.8em; height: 4vh;">Edit</button>
-    </div>
-
-    <ul class="list-group" style="text-align: center; margin: 10px 5px">
-        {% for stock in watch_list %}
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-            <span class="symbol-name">{{ stock.stock }}</span>
-
-            <div class="symbol-actions d-flex align-items-center">
-                <pre class="m-auto" id="data-output-{{ stock.token }}">loading...</pre>
-            </div>
-        </li>
-        {% endfor %}
-    </ul>
-</div>
-
-
-
-
-<div id="editable-watchlist-container" style="display: none;">
-    <div class="d-flex justify-content-between">
-        <h5 class="m-2">WatchList</h5>
-        <button id="cancel-button" class="btn btn-danger btn-sm m-2">Cancel</button>
-    </div>
-
-    <ul class="list-group" style="text-align: center; margin: 10px 5px">
-        {% for stock in watch_list %}
-        <form method="post" style="margin: 0; padding: 0;">
-            {% csrf_token %}
-            <input type="hidden" name="form_type" value="remove_stock_form">
-            <li class="list-group-item d-flex justify-content-between align-items-center">
+    <!-- Watchlist -->
+    {% else %}
+    <div id="watchlist-container">
+        <div class="d-flex justify-content-between p-3">
+            <h5>Watchlist</h5>
+            <button id="edit-button" class="btn btn-outline-success btn-sm py-0" style="font-size: 0.8em; height: 4vh;">Edit</button>
+        </div>
+        <ul class="list-group" style="text-align: center; margin: 10px 5px">
+            {% for stock in watch_list %}
+            <li class="list-group-item d-flex justify-content-between align-items-center" data-token="{{ stock.token }}">
                 <span class="symbol-name">{{ stock.stock }}</span>
-
                 <div class="symbol-actions d-flex align-items-center">
-                    <button type="submit" name="remove_stock" value="{{ stock.token }}"
-                        class="btn btn-remove btn-sm">x</button>
+                    <pre class="m-auto" id="data-output-{{ stock.token }}">loading...</pre>
                 </div>
             </li>
-        </form>
-        {% endfor %}
-    </ul>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Editable Watchlist -->
+    <div id="editable-watchlist-container" style="display: none;">
+        <div class="d-flex justify-content-between p-3">
+            <h5>Watchlist</h5>
+            <button id="cancel-button" class="btn btn-danger btn-sm">Cancel</button>
+        </div>
+        <ul class="list-group" style="text-align: center; margin: 10px 5px">
+            {% for stock in watch_list %}
+            <form method="post" style="margin: 0; padding: 0;">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="remove_stock_form">
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span class="symbol-name">{{ stock.stock }}</span>
+                    <div class="symbol-actions d-flex align-items-center">
+                        <button type="submit" name="remove_stock" value="{{ stock.token }}"
+                            class="btn btn-remove btn-sm">x</button>
+                    </div>
+                </li>
+            </form>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
 </div>
 
-{% endif %}
-
 <script>
-    const ws = new WebSocket('ws://localhost:8000/ws/live-data/');
+    const ws = new WebSocket('ws://' + window.location.host + '/ws/live-prices/');
     const previousPrices = {};
+
+    // // Fetch initial LTP for all stocks on page load
+    // document.addEventListener('DOMContentLoaded', () => {
+    //     const stockElements = document.querySelectorAll('.list-group-item[data-token]');
+    //     stockElements.forEach(element => {
+    //         const token = element.dataset.token;
+    //         fetch(`/get-stock-data/?stock=${token}`)
+    //             .then(response => response.json())
+    //             .then(data => {
+    //                 if (data.price) {
+    //                     const ltp = data.price / 100; // Convert to rupees
+    //                     const dataElement = document.getElementById(`data-output-${token}`);
+    //                     if (dataElement) {
+    //                         dataElement.textContent = ltp.toFixed(2);
+    //                         dataElement.style.color = 'black';
+    //                         previousPrices[token] = ltp;
+    //                     }
+    //                 }
+    //             })
+    //             .catch(error => console.error(`Error fetching LTP for token ${token}:`, error));
+    //     });
+    // });
 
     ws.onopen = () => {
         console.log('WebSocket connected');
-        document.getElementById('error-message').textContent = '';
     };
 
     ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
+        const token = data.token;
+        const ltp = data.last_traded_price / 100; // Convert to rupees
 
-        if (data.live_data && Array.isArray(data.live_data)) {
-            data.live_data.forEach(item => {
-                const token = item.token;
-                const ltp = item.last_traded_price;
-
-                // console.log(`Token: ${token}, LTP: ${ltp}`);
-
-                if (token && ltp) {
-                    const dataElement = document.getElementById(`data-output-${token}`);
-                    if (dataElement) {
-                        const previousLTP = previousPrices[token] || 0;
-
-                        if (ltp > previousLTP) {
-                            dataElement.style.color = 'green';
-                        } else if (ltp < previousLTP) {
-                            dataElement.style.color = 'red';
-                        } else {
-                            dataElement.style.color = 'black';
-                        }
-
-                        dataElement.textContent = `${ltp / 100}`;
-
-                        previousPrices[token] = ltp;
-                    }
+        if (token && ltp !== undefined) {
+            const dataElement = document.getElementById(`data-output-${token}`);
+            if (dataElement) {
+                const previousLTP = previousPrices[token] || 0;
+                if (ltp > previousLTP) {
+                    dataElement.style.color = 'green';
+                } else if (ltp < previousLTP) {
+                    dataElement.style.color = 'red';
+                } else {
+                    dataElement.style.color = 'black';
                 }
-            });
-        } else {
-            console.error('Unexpected data format or no live_data:', data);
+                dataElement.textContent = ltp.toFixed(2);
+                previousPrices[token] = ltp;
+            }
         }
     };
 
-    ws.onerror = () => {
-        console.error('WebSocket error');
-        document.getElementById('error-message').textContent = 'Error connecting to WebSocket';
+    ws.onerror = (error) => {
+        console.error('WebSocket Error:', error);
     };
 
     ws.onclose = () => {
         console.log('WebSocket connection closed');
-        document.getElementById('error-message').textContent = 'WebSocket connection closed';
     };
-</script>
 
-<script>
-    // Get references to both containers and buttons
+    // Toggle Edit Mode
     const watchlistContainer = document.getElementById('watchlist-container');
     const editableWatchlistContainer = document.getElementById('editable-watchlist-container');
     const editButton = document.getElementById('edit-button');
     const cancelButton = document.getElementById('cancel-button');
 
-    // Toggle to show the editable section
     editButton.addEventListener('click', () => {
         watchlistContainer.style.display = 'none';
         editableWatchlistContainer.style.display = 'block';
     });
 
-    // Toggle back to the original WatchList section
     cancelButton.addEventListener('click', () => {
         editableWatchlistContainer.style.display = 'none';
         watchlistContainer.style.display = 'block';
@@ -156,40 +153,41 @@
         align-items: center;
         padding: 10px 15px;
     }
-
     .symbol-name {
         flex: 1;
         text-align: left;
+        font-weight: 500;
     }
-
     .symbol-actions {
         display: flex;
         align-items: center;
     }
-
     pre {
         margin: 0;
         font-size: 0.9rem;
+        min-width: 60px;
+        text-align: right;
     }
-
     .btn-remove {
         background: none;
         border: none;
         font-size: 1.2rem;
         cursor: pointer;
-        padding: 0px 0px 5px 0px;
+        padding: 0 5px;
         margin-left: 10px;
+        color: #dc3545;
     }
-
     .btn-remove:hover {
-        color: red;
+        color: #ff0000;
     }
-
     .btn-remove:focus {
         outline: none;
     }
-
     .btn-outline-dark {
         margin-left: 10px;
+    }
+    .list-group {
+        max-width: 600px;
+        margin: 0 auto;
     }
 </style>
