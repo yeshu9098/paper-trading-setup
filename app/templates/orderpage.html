@@ -134,12 +134,36 @@ const previousPrices = {};
 
 ws.onopen = () => {
   console.log('WebSocket connected');
+  // Collect all stock tokens from open orders
+  const orderRows = document.querySelectorAll('tr[data-token]');
+  const tokens = Array.from(orderRows).map(row => row.dataset.token);
+  // Send tokens to the server to fetch initial LTP
+  if (tokens.length > 0) {
+    ws.send(JSON.stringify({
+      type: 'fetch_initial_ltp',
+      tokens: tokens
+    }));
+  }
 };
 
 ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
   const token = data.token;
   const ltp = data.last_traded_price / 100; // Convert to rupees
+  const error = data.error;
+
+  if (error) {
+    console.error(`Error for token ${token}: ${error}`);
+    const dataElement = document.getElementById(`data-output-${token}`);
+    const plElement = document.getElementById(`pl-output-${token}`);
+    if (dataElement && plElement) {
+      dataElement.textContent = 'N/A';
+      dataElement.style.color = 'black';
+      plElement.textContent = '-';
+      plElement.style.color = 'black';
+    }
+    return;
+  }
 
   if (token && ltp !== undefined) {
     const rows = document.querySelectorAll(`tr[data-token="${token}"]`);
@@ -201,36 +225,34 @@ function closeOrder(orderId, token) {
   const ltpElement = document.getElementById(`data-output-${token}`);
   const currentLTP = ltpElement ? parseFloat(ltpElement.textContent || 0) : 0;
 
-  if (currentLTP === 0) {
+  if (currentLTP === 0 || ltpElement.textContent === 'N/A') {
     alert("Unable to fetch the live price. Please try again.");
     return;
   }
 
   const closePrice = currentLTP.toFixed(2);
 
-  if (closePrice) {
-    fetch("/close-order/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "X-CSRFToken": "{{ csrf_token }}"
-      },
-      body: new URLSearchParams({
-        order_id: orderId,
-        close_price: closePrice,
-      })
+  fetch("/close-order/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "X-CSRFToken": "{{ csrf_token }}"
+    },
+    body: new URLSearchParams({
+      order_id: orderId,
+      close_price: closePrice,
     })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          alert(data.success);
-          location.reload();
-        } else {
-          alert(data.error || "Failed to close order");
-        }
-      })
-      .catch(error => console.error("Error:", error));
-  }
+  })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        alert(data.success);
+        location.reload();
+      } else {
+        alert(data.error || "Failed to close order");
+      }
+    })
+    .catch(error => console.error("Error:", error));
 }
 </script>
 {% endblock %}

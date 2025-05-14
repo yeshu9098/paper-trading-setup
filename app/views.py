@@ -190,7 +190,7 @@ def get_stock_data(request):
 
 
 def order_page(request):
-    open_orders = Trade.objects.filter(is_live=True)
+    open_orders = Trade.objects.filter(is_live=True).order_by('-id')
     closed_orders = Trade.objects.filter(is_live=False).order_by('-id')
     paginator = Paginator(closed_orders, 5)
 

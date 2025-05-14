@@ -1,19 +1,15 @@
 <div style="text-align: center; margin-top: 0px">
     <form action="" method="post">
         {% csrf_token %}
-
         <div class="d-flex justify-content-center align-items-center gap-2 p-2">
-
             <input type="hidden" name="form_type" value="candle_data_form">
-
             <select name="token" class="form-select form-select-sm" id="token" required>
                 <option value="" disabled selected>Select stock</option>
                 {% for stock in watch_list %}
                 <option value="{{ stock.token }}">{{ stock.stock }}</option>
                 {% endfor %}
             </select>
-
-            <select name="interval" class="form-select  form-select-sm" id="interval" required>
+            <select name="interval" class="form-select form-select-sm" id="interval" required>
                 <option value="" disabled selected>Select interval</option>
                 <option value="ONE_MINUTE">ONE_MINUTE</option>
                 <option value="FIVE_MINUTE">FIVE_MINUTE</option>
@@ -23,9 +19,7 @@
                 <option value="ONE_DAY">ONE_DAY</option>
             </select>
             <button type="submit" class="btn btn-outline-dark btn-sm">Show</button>
-
         </div>
-        
     </form>
 </div>
 
@@ -34,93 +28,103 @@
     <span id="infoInterval">{{ timestamp }}</span>
 </div>
 
-<div id="chartContainer" class="p-1" style="height: 500px; width: 99%"></div>
+<div id="chartContainer" class="" style="width: 98%; min-height: 100px;"></div>
 
-<script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Parse candlestick data from server
-        const data = JSON.parse('{{ candle_data_json|safe }}');
-        
-        const { createChart, CandlestickSeries } = LightweightCharts;
-        // Transform the data for TradingView Lightweight Charts
-        const candlestickData = data.map(d => {
-            const utcTimestamp = new Date(d.Timestamp).getTime() / 1000;
-            
-            // Convert to IST (UTC + 5:30)
-            const istTimestamp = utcTimestamp + (5.5 * 60 * 60); // Add 5.5 hours for IST
+document.addEventListener('DOMContentLoaded', function () {
+    // Parse candlestick data from server
+    const data = JSON.parse('{{ candle_data_json|safe }}');
 
-            return {
-                time: istTimestamp, // Use IST timestamp for the chart
-                open: d.Open,
-                high: d.High,
-                low: d.Low,
-                close: d.Close,
-            }
-        });
+    const { createChart, CandlestickSeries } = LightweightCharts;
 
-        // Create the chart container
-        const chartContainer = document.getElementById('chartContainer');
-        const chart = createChart(chartContainer, {
-            width: chartContainer.clientWidth,
-            height: 475,
-            layout: {
-                backgroundColor: '#ffffff',
-                textColor: '#000',
-            },
-            grid: {
-                vertLines: {
-                    color: '#e1e1e1',
-                },
-                horzLines: {
-                    color: '#e1e1e1',
-                },
-            },
-            timeScale: {
-                borderColor: '#cccccc',
-                timeVisible: true, // Make time visible
-                secondsVisible: false, // Hide seconds
-            },
-            priceScale: {
-                borderColor: '#cccccc',
-            },
-        });
-
-
-        const candlestickSeries = chart.addSeries(CandlestickSeries, {
-            upColor: '#26a69a',
-            downColor: '#ef5350',
-            borderVisible: false,
-            wickUpColor: '#26a69a',
-            wickDownColor: '#ef5350',
-        });
-        // Add candlestick series to the chart
-        // const candlestickSeries = chart.addCandlestickSeries();
-        // console.log('Candlestick Series:', candlestickSeries);
-        candlestickSeries.setData(candlestickData);
-
-        // Function to format timestamp to IST for display
-        function formatTimestampToIST(timestamp) {
-            const date = new Date(timestamp * 1000); // Convert UNIX timestamp to Date object
-            const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC + 5.5 hours
-            const istDate = new Date(date.getTime() + istOffset); // Adjust for IST timezone
-
-            return `${istDate.getDate()}/${istDate.getMonth() + 1}/${istDate.getFullYear()} ${String(istDate.getHours()).padStart(2, '0')}:${String(istDate.getMinutes()).padStart(2, '0')}`;
-        }
-
-        // Subscribe to crosshair move to display info on hover
-        chart.subscribeCrosshairMove(function(param) {
-            if (!param || !param.time) return;
-            
-            const formattedTime = formatTimestampToIST(param.time); // Convert to IST
-
-            // Optionally, update the displayed information on hover
-            console.log(formattedTime); // You can display this wherever you need
-        });
-
-        // Adjust chart size dynamically on window resize
-        window.addEventListener('resize', () => {
-            chart.resize(chartContainer.clientWidth, 350);
-        });
+    // Transform the data for TradingView Lightweight Charts
+    const candlestickData = data.map(d => {
+        const utcTimestamp = new Date(d.Timestamp).getTime() / 1000;
+        const istTimestamp = utcTimestamp + (5.5 * 60 * 60); // Add 5.5 hours for IST
+        return {
+            time: istTimestamp,
+            open: d.Open,
+            high: d.High,
+            low: d.Low,
+            close: d.Close,
+        };
     });
+
+    // Create the chart container
+    const chartContainer = document.getElementById('chartContainer');
+
+    // Calculate dynamic height
+    function calculateChartHeight() {
+        const headerHeight = document.querySelector('header')?.offsetHeight || 50; // Adjust if you have a header
+        const formHeight = document.querySelector('form')?.offsetHeight || 50;
+        const stockInfoHeight = document.querySelector('.stock-info')?.offsetHeight || 30;
+        const paddingMargin = 40; // Account for margins/padding
+        const availableHeight = window.innerHeight - headerHeight - formHeight - stockInfoHeight - paddingMargin;
+        return Math.max(availableHeight, 300); // Ensure minimum height of 300px
+    }
+
+    // Initialize chart with dynamic height
+    const chart = createChart(chartContainer, {
+        width: chartContainer.clientWidth,
+        height: calculateChartHeight(),
+        layout: {
+            backgroundColor: '#ffffff',
+            textColor: '#000',
+        },
+        grid: {
+            vertLines: {
+                color: '#e1e1e1',
+            },
+            horzLines: {
+                color: '#e1e1e1',
+            },
+        },
+        timeScale: {
+            borderColor: '#cccccc',
+            timeVisible: true,
+            secondsVisible: false,
+        },
+        priceScale: {
+            borderColor: '#cccccc',
+        },
+    });
+
+    const candlestickSeries = chart.addSeries(CandlestickSeries, {
+        upColor: '#26a69a',
+        downColor: '#ef5350',
+        borderVisible: false,
+        wickUpColor: '#26a69a',
+        wickDownColor: '#ef5350',
+    });
+
+    candlestickSeries.setData(candlestickData);
+
+    // Function to format timestamp to IST for display
+    function formatTimestampToIST(timestamp) {
+        const date = new Date(timestamp * 1000);
+        const istOffset = 5.5 * 60 * 60 * 1000;
+        const istDate = new Date(date.getTime() + istOffset);
+        return `${istDate.getDate()}/${istDate.getMonth() + 1}/${istDate.getFullYear()} ${String(istDate.getHours()).padStart(2, '0')}:${String(istDate.getMinutes()).padStart(2, '0')}`;
+    }
+
+    // Subscribe to crosshair move to display info on hover
+    chart.subscribeCrosshairMove(function(param) {
+        if (!param || !param.time) return;
+        const formattedTime = formatTimestampToIST(param.time);
+        // Optionally, update the displayed information on hover
+    });
+
+    // Adjust chart size dynamically on window resize
+    function resizeChart() {
+        const newHeight = calculateChartHeight();
+        chartContainer.style.height = `${newHeight}px`;
+        chart.resize(chartContainer.clientWidth, newHeight);
+    }
+
+    window.addEventListener('resize', resizeChart);
+
+    // Initial resize to ensure correct sizing
+    resizeChart();
+});
 </script>

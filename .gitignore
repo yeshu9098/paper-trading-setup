@@ -5,3 +5,6 @@ db.sqlite3
 OpenAPIScripMaster.json
 livestream/
 app/migrations/
+dump.rdb
+app/__pycache__/
+app/migrations/__pycache__/
